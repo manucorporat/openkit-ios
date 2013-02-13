@@ -1,65 +1,171 @@
 //
 //  OKNetworker.m
-//  OKNetworker
+//  OKClient
 //
-//  Created by Manuel Martinez-Almeida on 9/2/13.
+//  Created by Manuel Martinez-Almeida on 2/9/13.
 //  Copyright (c) 2013 OpenKit. All rights reserved.
 //
 
 #import "OKNetworker.h"
 #import "OKDirector.h"
+#import "OKUser.h"
+#import "OKCrypto.h"
+#import "OKConfig.h"
 #import "AFNetworking.h"
 
 
-static AFHTTPClient* _httpClient = nil;
+#if OK_CRYPTO
+@interface OKRequestGETOperation : AFJSONRequestOperation
+{ };
+@end
+
+@interface OKRequestPOSTOperation : AFJSONRequestOperation
+{
+    NSString *decrypted;
+};
+@end
+
+
+@implementation OKRequestPOSTOperation
+
+- (NSString *)responseString {
+    
+    if(!decrypted) {
+        decrypted = (NSString*)[OKCryto decryptOK:[[super responseString] dataUsingEncoding:NSUTF8StringEncoding]];
+    }
+    return decrypted;
+}
+
+@end
+#endif
+
+
+static OKNetworker *_sharedInstance = nil;
+
+@interface OKNetworker ()
+{
+    AFHTTPClient *getClient_;
+    AFHTTPClient *postClient_;
+};
+
+@end
+
 
 @implementation OKNetworker
 
-+ (AFHTTPClient*) httpClient
++ (id)sharedInstance
 {
-    if(!_httpClient) {
-        _httpClient = [[AFHTTPClient alloc] initWithBaseURL:[NSURL URLWithString:OKBaseURL]];
-        [_httpClient setParameterEncoding:AFJSONParameterEncoding];
-        [_httpClient registerHTTPOperationClass:[AFJSONRequestOperation class]];
+    @synchronized(self)
+    {
+        if(!_sharedInstance)
+            _sharedInstance = [[OKNetworker alloc] init];
         
-        // Accept HTTP Header; see http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.1
-        [_httpClient setDefaultHeader:@"Accept" value:@"application/json"];
-        [_httpClient setDefaultHeader:@"Content-Type" value:@"application/json"];
+        return _sharedInstance;
     }
-    return _httpClient;
 }
 
 
-+ (NSMutableDictionary*) mergeParams:(NSDictionary*)d
+- (id)init
 {
+    self = [super init];
+    if (self) {
+        
+        NSURL *url = [NSURL URLWithString:OK_BASE_URL];
+        
+        // We need different http clients because OpenKit
+        // performs POST and GET requests in a different way.
+        
+        // GET http client
+        getClient_  = [[AFHTTPClient alloc] initWithBaseURL:url];
+        [getClient_ setDefaultHeader:@"Accept" value:@"application/json"];
+        [getClient_ setDefaultHeader:@"Content-Type" value:@"application/json"];
+        
+        // POST http client
+        postClient_ = [[AFHTTPClient alloc] initWithBaseURL:url];
+        [postClient_ setDefaultHeader:@"Accept" value:@"application/octet-stream"];
+        [postClient_ setDefaultHeader:@"Content-Type" value:@"application/octet-stream"];
+        [postClient_ setDefaultHeader:OK_KEY_APPID value:[OpenKit getApplicationID]];
+        
+#if OK_CRYPTO
+        [getClient_ registerHTTPOperationClass:[OKRequestGETOperation class]];
+        [postClient_ registerHTTPOperationClass:[OKRequestPOSTOperation class]];
+#else
+        [getClient_ registerHTTPOperationClass:[AFJSONRequestOperation class]];
+        [postClient_ registerHTTPOperationClass:[AFJSONRequestOperation class]];
+#endif
+        
+    }
+    return self;
+}
+
+
+- (NSMutableDictionary*) mergeGETParams:(NSDictionary*)d user:(OKUser*)user
+{
+    NSAssert([OpenKit getApplicationID], @"Application ID can not be NULL");
     NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithDictionary:d];
-    if(![dict objectForKey:@"app_key"])
-        [dict setValue:[OpenKit getApplicationID] forKey:@"app_key"];
-    
+
+    [dict setValue:[OpenKit getApplicationID] forKey:OK_KEY_APPID];
+    [dict setValue:[user userID] forKey:OK_KEY_USERID];
+        
     return dict;
 }
 
 
-+ (void) requestWithMethod:(NSString*)method
+- (NSMutableDictionary*) mergePOSTParams:(NSDictionary*)d user:(OKUser*)user
+{
+    NSAssert([OpenKit getApplicationID], @"Application ID can not be NULL");
+    NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithDictionary:d];
+    
+    [dict setValue:[OpenKit getApplicationID] forKey:OK_KEY_APPID];
+    [dict setValue:[user userID] forKey:OK_KEY_USERID];
+    [dict setValue:[user secretKey] forKey:OK_KEY_USERKEY];
+    [dict setValue:[NSDate date] forKey:OK_KEY_TIME];
+    [dict setValue:d forKey:OK_KEY_CONTENT];
+
+    return dict;
+}
+
+
+- (void) requestWithMethod:(NSString*)method
                       path:(NSString*)path
                 parameters:(NSDictionary*)params
+                      user:(OKUser*)user
                    handler:(void (^)(id responseObject, NSError* error))handler
 {
-    AFHTTPClient *httpclient = [self httpClient];
-    params = [self mergeParams:params];
-    
-    NSMutableURLRequest *request = [httpclient requestWithMethod:method path:path parameters:params];
+    NSError *error;
+    NSData *data;
+    NSMutableURLRequest *request;
+    AFHTTPClient *httpclient;
+
+    if([method isEqualToString:@"GET"]) {
+        httpclient = getClient_;
+        params = [self mergeGETParams:params user:user];
+        request = [httpclient requestWithMethod:method path:path parameters:params];
+        
+    }else{
+        httpclient = postClient_;
+        params = [self mergePOSTParams:params user:user];
+        data = [NSJSONSerialization dataWithJSONObject:params options:0 error:&error];
+#if OK_CRYPTO
+        data = [OKCrypto encryptWithAppKey:data];
+#endif
+        request = [httpclient requestWithMethod:method path:path parameters:nil];
+        [request setHTTPBody:data];
+    }
+
+
+    // Perform request
     AFHTTPRequestOperation *operation = [httpclient HTTPRequestOperationWithRequest:request success:
      ^(AFHTTPRequestOperation *operation, id responseObject)
      {
+         if(handler)
          handler(responseObject, nil);
          
      } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
          
+         if(handler)
          handler(nil, error);
-         
      }];
-    
     [operation start];
 }
 
@@ -68,10 +174,11 @@ static AFHTTPClient* _httpClient = nil;
           parameters:(NSDictionary*)params
              handler:(void (^)(id responseObject, NSError* error))handler
 {
-    [self requestWithMethod:@"GET"
-                       path:path
-                 parameters:params
-                    handler:handler];
+    [[OKNetworker sharedInstance] requestWithMethod:@"GET"
+                                               path:path
+                                         parameters:params
+                                               user:[OKUser currentUser]
+                                            handler:handler];
 }
 
 
@@ -79,10 +186,11 @@ static AFHTTPClient* _httpClient = nil;
          parameters:(NSDictionary*)params
             handler:(void (^)(id responseObject, NSError* error))handler
 {
-    [self requestWithMethod:@"POST"
-                       path:path
-                 parameters:params
-                    handler:handler];
+    [[OKNetworker sharedInstance] requestWithMethod:@"POST"
+                                               path:path
+                                         parameters:params
+                                               user:[OKUser currentUser]
+                                            handler:handler];
 }
 
 
@@ -90,11 +198,11 @@ static AFHTTPClient* _httpClient = nil;
         parameters:(NSDictionary*)params
            handler:(void (^)(id responseObject, NSError* error))handler
 {
-    [self requestWithMethod:@"PUT"
-                       path:path
-                 parameters:params
-                    handler:handler];
+    [[OKNetworker sharedInstance] requestWithMethod:@"PUT"
+                                               path:path
+                                         parameters:params
+                                               user:[OKUser currentUser]
+                                            handler:handler];
 }
-
 
 @end

@@ -1,33 +1,34 @@
 //
 //  OKNetworker.h
-//  OKNetworker
+//  OKClient
 //
-//  Created by Manuel Martinez-Almeida on 9/2/13.
+//  Created by Manuel Martinez-Almeida on 2/9/13.
 //  Copyright (c) 2013 OpenKit. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>
 
-@class AFHTTPClient;
+@class OKUser;
 @interface OKNetworker : NSObject
 
-+ (AFHTTPClient*) httpClient;
++ (id)sharedInstance;
 
-+ (void) requestWithMethod:(NSString*)method
-                      path:(NSString*)path
-                parameters:(NSDictionary*)params
-                   handler:(void (^)(id responseObject, NSError* error))handler;
+- (void)requestWithMethod:(NSString*)method
+                     path:(NSString*)path
+               parameters:(NSDictionary*)params
+                     user:(OKUser*)user
+                  handler:(void (^)(id responseObject, NSError* error))handler;
 
-+ (void) getFromPath:(NSString*)path
-          parameters:(NSDictionary*)params
-             handler:(void (^)(id responseObject, NSError* error))handler;
-
-+ (void) postToPath:(NSString*)path
++ (void)getFromPath:(NSString*)path
          parameters:(NSDictionary*)params
             handler:(void (^)(id responseObject, NSError* error))handler;
 
-+ (void) putToPath:(NSString*)path
++ (void)postToPath:(NSString*)path
         parameters:(NSDictionary*)params
            handler:(void (^)(id responseObject, NSError* error))handler;
+
++ (void)putToPath:(NSString*)path
+       parameters:(NSDictionary*)params
+          handler:(void (^)(id responseObject, NSError* error))handler;
 
 @end
