@@ -69,11 +69,11 @@
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
 {
-    if([[currentScore user] OKUserID] == [[OKUser currentUser] OKUserID]) {
+    if([[currentScore user] userID] == [[OKUser currentUser] userID]) {
         return @"Your High Score";
     }
 
-    return [NSString stringWithFormat:@"%@'s High Score", [[currentScore user] userNick]];
+    return [NSString stringWithFormat:@"%@'s High Score", [[currentScore user] nick]];
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath

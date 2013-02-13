@@ -9,7 +9,6 @@
 #import "OKNickViewController.h"
 #import <QuartzCore/QuartzCore.h>
 #import "OpenKit.h"
-#import "OKUserUtilities.h"
 #import "OKHelper.h"
 
 
@@ -64,8 +63,8 @@
 - (void)updateForUser:(OKUser *)user
 {
     [self.profilePic setUser:user];
-    [self.nickField setText:[user userNick]];
-    [self.nameLabel setText:[user userNick]];
+    [self.nickField setText:[user nick]];
+    [self.nameLabel setText:[user nick]];
 }
 
 - (void)viewDidLoad
@@ -165,7 +164,7 @@
     NSString *userNickEntered = [nickField text];
     
     //If the user pressed done but did not change their nickname, then do nothing
-    if ([userNickEntered isEqualToString:[[OKUser currentUser] userNick]]) {
+    if ([userNickEntered isEqualToString:[[OKUser currentUser] nick]]) {
         [delegate didFinishShowingNickVC];
     } else if (![self isValidNickname:userNickEntered]) {
         UIAlertView *invalidNickAlert = [[UIAlertView alloc] initWithTitle:@"Invalid Nick" message:@"Please enter a nickname or skip to use the name provided by your account." delegate:nil cancelButtonTitle:@"OK" otherButtonTitles: nil];
@@ -174,8 +173,9 @@
         [spinner startAnimating];
         [doneBtn setHidden:YES];
         
-        [OKUserUtilities updateUserNickForOKUser:[OKUser currentUser] withNewNick:userNickEntered
-                           withCompletionHandler:^(NSError *error)
+        OKUser *user = [OKUser currentUser];
+        [user setNick:userNickEntered];
+        [user syncWithCompletionHandler:^(NSError *error)
         {
             [spinner stopAnimating];
             [doneBtn setHidden:NO];

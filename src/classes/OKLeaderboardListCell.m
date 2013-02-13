@@ -65,7 +65,7 @@
     leaderboard = aLeaderboard;
     
     label1.text = [leaderboard name];
-    label2.text = [leaderboard playerCountString];
+    label2.text = [NSString stringWithFormat:@"%d players", [leaderboard playerCount]];
     
     [leaderboardIcon setImageWithURL:[NSURL URLWithString:[leaderboard icon_url]]];
 }

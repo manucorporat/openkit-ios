@@ -43,7 +43,7 @@
     [self.unlinkBtn setTitleColor:[UIColor colorWithRed:60.0f / 255.0f green:60.0f / 255.0f blue:60.0f / 255.0f alpha:1.0f] forState:UIControlStateNormal];
     [self.unlinkBtn setTitleShadowColor:[UIColor colorWithRed:255.0f / 255.0f green:255.0f / 255.0f blue:255.0f / 255.0f alpha:1.0f] forState:UIControlStateNormal];
     
-    [nameLabel setText:[[OKUser currentUser] userNick]];
+    [nameLabel setText:[[OKUser currentUser] nick]];
 }
 
 

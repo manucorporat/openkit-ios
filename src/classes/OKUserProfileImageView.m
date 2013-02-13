@@ -9,6 +9,7 @@
 #import "OKUserProfileImageView.h"
 #import "UIImageView+AFNetworking.h"
 #import "OKTwitterUtilities.h"
+#import "OKConfig.h"
 
 
 @interface OKUserProfileImageView ()
@@ -73,12 +74,15 @@
 - (void)setUser:(OKUser *)aUser
 {
     // Use the built in FB placeholder for nil user.
-    if (!aUser || ([aUser fbUserID] != nil)) {
+    NSString *fbUserID = [aUser authKeyForService:OK_KEY_FACEBOOK];
+    NSString *twitterID = [aUser authKeyForService:OK_KEY_TWIITER];
+
+    if (!aUser || (fbUserID != nil)) {
         [self.fbProfileImageView setHidden:NO];
         [self.imageView setHidden:YES];
-        [self.fbProfileImageView setProfileID:[aUser.fbUserID stringValue]];
+        [self.fbProfileImageView setProfileID:fbUserID];
     }
-    else if([aUser twitterUserID]) {
+    else if(twitterID) {
         //TODO Displaying twitter images is not yet implemented
         [self.fbProfileImageView setProfileID:nil];
         //[self.fbProfileImageView setHidden:YES];

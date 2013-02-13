@@ -8,8 +8,9 @@
 
 #import <Twitter/Twitter.h>
 #import "OKTwitterUtilities.h"
-#import "OKUserUtilities.h"
+#import "OKUserPrivate.h"
 #import "OKDirector.h"
+#import "OKConfig.h"
 #import "OKNetworker.h"
 
 @implementation OKTwitterUtilities
@@ -92,25 +93,17 @@
 }
 
 +(void)CreateOKUserWithTwitterID:(NSNumber *)twitterID withUserNick:(NSString *)userNick withCompletionHandler:(void(^)(OKUser *user, NSError *error))completionhandler
-{    
-    //Create a request and send it to OpenKit
-    NSDictionary *params = [NSDictionary dictionaryWithObjectsAndKeys:
-                            twitterID, @"twitter_id",
-                            userNick, @"nick", nil];
+{
+    OKUser *user = [[OKUser alloc] init];
+    [user setNick:userNick];
+    [user addAuth:twitterID service:OK_KEY_TWIITER];
     
-    [OKNetworker postToPath:@"/users" parameters:params
-                    handler:^(id responseObject, NSError *error)
+    [user syncWithCompletionHandler:^(NSError *error)
      {
-         OKUser *newUser = nil;
-         if(error == nil) {
-             //Success
-             NSLog(@"Successfully created/found user ID: %@", [responseObject valueForKeyPath:@"id"]);
-             newUser = [OKUserUtilities createOKUserWithJSONData:responseObject];
-             [[OpenKit sharedInstance] saveCurrentUser:newUser];
-         }else{
-             NSLog(@"Failed to create user");
-         }
-         completionhandler(newUser, error);
+         if(!error)
+             [[OpenKit sharedInstance] saveCurrentUser:user];
+         
+         completionhandler(user, error);
      }];
 }
 

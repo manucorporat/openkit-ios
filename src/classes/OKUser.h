@@ -10,10 +10,14 @@
 
 @interface OKUser : NSObject
 
-@property (nonatomic, strong) NSNumber *OKUserID;
-@property (nonatomic, strong) NSNumber *fbUserID;
-@property (nonatomic, strong) NSNumber *twitterUserID;
-@property (nonatomic, strong) NSString *userNick;
+@property (nonatomic, strong, readonly) NSNumber *userID;
+@property (nonatomic, strong, readonly) NSString *secretKey;
+@property (nonatomic, strong) NSString *nick;
+@property (nonatomic, strong) NSMutableDictionary *auth;
+
+- (void)syncWithCompletionHandler:(void(^)(NSError *error))handler;
+- (void)addAuth:(id)key service:(NSString*)service;
+- (NSString*)authKeyForService:(NSString*)service;
 
 + (OKUser*)currentUser;
 + (void)logoutCurrentUserFromOpenKit;

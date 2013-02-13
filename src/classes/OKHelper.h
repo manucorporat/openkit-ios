@@ -11,5 +11,6 @@
 @interface OKHelper : NSObject
 
 + (NSDate *)dateNDaysFromToday:(int)n;
++ (NSString*)persistentPath:(NSString*)filename;
 
 @end

@@ -88,7 +88,7 @@
 -(void)setScore:(OKScore *)aScore
 {
     score = aScore;
-    label1.text = [[score user] userNick];
+    label1.text = [[score user] nick];
     label2.text = [NSString stringWithFormat:@"%d",[score scoreValue]];
     label3.text = [NSString stringWithFormat:@"%d",[score scoreRank]];
     [cellImage setUser:[score user]];

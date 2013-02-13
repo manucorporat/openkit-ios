@@ -8,8 +8,9 @@
 
 #import <FacebookSDK/FacebookSDK.h>
 #import "OKFacebookUtilities.h"
-#import "OKUserUtilities.h"
 #import "OKDirector.h"
+#import "OKConfig.h"
+#import "OKUser.h"
 #import "OKNetworker.h"
 
 
@@ -17,17 +18,17 @@
 
 +(BOOL)handleOpenURL:(NSURL *)url
 {
-    return [FBSession.activeSession handleOpenURL:url];
+    return [[FBSession activeSession] handleOpenURL:url];
 }
 
 +(void)handleDidBecomeActive
 {
-    [FBSession.activeSession handleDidBecomeActive];
+    [[FBSession activeSession] handleDidBecomeActive];
 }
 
 +(void)handleWillTerminate
 {
-    [FBSession.activeSession close];
+    [[FBSession activeSession] close];
 }
 
 +(void)GetCurrentFacebookUsersIDAndCreateOKUserWithCompletionhandler:(void(^)(OKUser *user, NSError *error))compHandler
@@ -104,28 +105,19 @@
     }
 }
 
-+(void)CreateOKUserWithFacebookID:(NSString *)facebookID withUserNick:(NSString *)userNick withCompletionHandler:(void(^)(OKUser *user, NSError *error))completionhandler
-{    
-    //Create a request and send it to OpenKit
-    NSDictionary *params = [NSDictionary dictionaryWithObjectsAndKeys:
-                            facebookID, @"fb_id",
-                            userNick, @"nick", nil];
 
-    [OKNetworker postToPath:@"/users" parameters:params
-                    handler:^(id responseObject, NSError *error)
++(void)CreateOKUserWithFacebookID:(NSString *)facebookID withUserNick:(NSString *)userNick withCompletionHandler:(void(^)(OKUser *user, NSError *error))completionhandler
+{
+    OKUser *user = [[OKUser alloc] init];
+    [user setNick:userNick];
+    [user addAuth:facebookID service:OK_KEY_FACEBOOK];
+    
+    [user syncWithCompletionHandler:^(NSError *error)
      {
-         OKUser *newUser = nil;
-         if(!error) {
-             //Success
-             NSLog(@"Successfully created/found user ID: %@", [responseObject valueForKeyPath:@"id"]);
-             newUser = [OKUserUtilities createOKUserWithJSONData:responseObject];
-             
-             //TODO save current user
-             [[OpenKit sharedInstance] saveCurrentUser:newUser];
-         }else{
-             NSLog(@"Failed to create user with error: %@", error);
-         }
-         completionhandler(newUser, error);
+         if(!error)
+             [[OpenKit sharedInstance] saveCurrentUser:user];
+         
+         completionhandler(user, error);
      }];
 }
 
