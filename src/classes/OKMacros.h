@@ -18,9 +18,9 @@
 #define OK_CURRENT_APP_VERSION [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"]
 
 #define OK_RAISE(name, ...) {\
-    NSString *str = [NSString stringWithFormat:__VA_ARGS__]; \
+    NSString *str = [NSString stringWithFormat:(name), ##__VA_ARGS__]; \
     NSLog(@"Raising %@: %@", name, str); \
-    [NSException raise:name format:str]; \
+    [NSException raise:name format:@"%@", str]; \
 }
 
 // System Versioning
