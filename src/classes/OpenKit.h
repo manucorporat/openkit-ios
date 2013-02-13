@@ -8,10 +8,10 @@
 
 #import <Foundation/Foundation.h>
 
-#import "AFJSONRequestOperation.h"
 #import "OKDirector.h"
 #import "OKScore.h"
 #import "OKUser.h"
 #import "OKLeaderboard.h"
+#import "OKConfig.h"
 #import "OKCloud.h"
 #import "OKGUI.h"

@@ -55,7 +55,6 @@
 		3209062E16C395EE00878B49 /* OKTwitterUtilities.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3221C75F16C39480008C194B /* OKTwitterUtilities.h */; };
 		3209062F16C395EE00878B49 /* OKUser.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3221C76116C39480008C194B /* OKUser.h */; };
 		3209063016C395EE00878B49 /* OKUserProfileImageView.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3221C76316C39480008C194B /* OKUserProfileImageView.h */; };
-		3209063116C395EE00878B49 /* OKUserUtilities.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3221C76516C39480008C194B /* OKUserUtilities.h */; };
 		3209063216C395EE00878B49 /* OpenKit.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3221C76716C39480008C194B /* OpenKit.h */; };
 		3209063316C395EE00878B49 /* SimpleKeychain.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3221C76916C39480008C194B /* SimpleKeychain.h */; };
 		3209063416C395F800878B49 /* OKLeaderboardsListViewController.xib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3221C6ED16C393EE008C194B /* OKLeaderboardsListViewController.xib */; };
@@ -86,9 +85,9 @@
 		3221C77F16C39480008C194B /* OKTwitterUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = 3221C76016C39480008C194B /* OKTwitterUtilities.m */; };
 		3221C78016C39480008C194B /* OKUser.m in Sources */ = {isa = PBXBuildFile; fileRef = 3221C76216C39480008C194B /* OKUser.m */; };
 		3221C78116C39480008C194B /* OKUserProfileImageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 3221C76416C39480008C194B /* OKUserProfileImageView.m */; };
-		3221C78216C39480008C194B /* OKUserUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = 3221C76616C39480008C194B /* OKUserUtilities.m */; };
 		3221C78416C39480008C194B /* SimpleKeychain.m in Sources */ = {isa = PBXBuildFile; fileRef = 3221C76A16C39480008C194B /* SimpleKeychain.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		3251E87816C2C9630000553D /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3251E87716C2C9630000553D /* Foundation.framework */; };
+		A95224C516C6C7AA00F14FF0 /* OKCrypto.m in Sources */ = {isa = PBXBuildFile; fileRef = A95224C416C6C7AA00F14FF0 /* OKCrypto.m */; };
 		A992883816C562B900F0F1EA /* OKDirector.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = A9DDFB2816C4214F009D26DE /* OKDirector.h */; };
 		A9DDFB2C16C42186009D26DE /* OKDirector.m in Sources */ = {isa = PBXBuildFile; fileRef = A9DDFB2B16C42186009D26DE /* OKDirector.m */; };
 		A9E5140C16C4604A0021CB9C /* OKNetworker.m in Sources */ = {isa = PBXBuildFile; fileRef = A9E5140B16C4604A0021CB9C /* OKNetworker.m */; };
@@ -173,7 +172,6 @@
 				3209062E16C395EE00878B49 /* OKTwitterUtilities.h in CopyFiles */,
 				3209062F16C395EE00878B49 /* OKUser.h in CopyFiles */,
 				3209063016C395EE00878B49 /* OKUserProfileImageView.h in CopyFiles */,
-				3209063116C395EE00878B49 /* OKUserUtilities.h in CopyFiles */,
 				3209063216C395EE00878B49 /* OpenKit.h in CopyFiles */,
 				3209063316C395EE00878B49 /* SimpleKeychain.h in CopyFiles */,
 			);
@@ -270,13 +268,17 @@
 		3221C76216C39480008C194B /* OKUser.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OKUser.m; sourceTree = "<group>"; };
 		3221C76316C39480008C194B /* OKUserProfileImageView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OKUserProfileImageView.h; sourceTree = "<group>"; };
 		3221C76416C39480008C194B /* OKUserProfileImageView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OKUserProfileImageView.m; sourceTree = "<group>"; };
-		3221C76516C39480008C194B /* OKUserUtilities.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OKUserUtilities.h; sourceTree = "<group>"; };
-		3221C76616C39480008C194B /* OKUserUtilities.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OKUserUtilities.m; sourceTree = "<group>"; };
 		3221C76716C39480008C194B /* OpenKit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenKit.h; sourceTree = "<group>"; };
 		3221C76916C39480008C194B /* SimpleKeychain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SimpleKeychain.h; sourceTree = "<group>"; };
 		3221C76A16C39480008C194B /* SimpleKeychain.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SimpleKeychain.m; sourceTree = "<group>"; };
 		3251E87416C2C9630000553D /* libOpenKitIOS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libOpenKitIOS.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		3251E87716C2C9630000553D /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		A94DE1DA16C7E92D00A96903 /* OKConfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OKConfig.h; sourceTree = "<group>"; };
+		A95224C316C6C7AA00F14FF0 /* OKCrypto.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OKCrypto.h; sourceTree = "<group>"; };
+		A95224C416C6C7AA00F14FF0 /* OKCrypto.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OKCrypto.m; sourceTree = "<group>"; };
+		A97FB47A16C944F50076B8AF /* OKScorePrivate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OKScorePrivate.h; sourceTree = "<group>"; };
+		A97FB47B16C944F50076B8AF /* OKUserPrivate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OKUserPrivate.h; sourceTree = "<group>"; };
+		A97FB47C16C946C30076B8AF /* OKLeaderboardPrivate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OKLeaderboardPrivate.h; sourceTree = "<group>"; };
 		A992884016C5637000F0F1EA /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		A992884316C5637000F0F1EA /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		A9DDFB2816C4214F009D26DE /* OKDirector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OKDirector.h; sourceTree = "<group>"; };
@@ -383,6 +385,12 @@
 			isa = PBXGroup;
 			children = (
 				A9DDFB2216C41766009D26DE /* GUI */,
+				A97FB47C16C946C30076B8AF /* OKLeaderboardPrivate.h */,
+				A97FB47A16C944F50076B8AF /* OKScorePrivate.h */,
+				A97FB47B16C944F50076B8AF /* OKUserPrivate.h */,
+				A94DE1DA16C7E92D00A96903 /* OKConfig.h */,
+				A95224C316C6C7AA00F14FF0 /* OKCrypto.h */,
+				A95224C416C6C7AA00F14FF0 /* OKCrypto.m */,
 				A9E5140A16C4604A0021CB9C /* OKNetworker.h */,
 				A9E5140B16C4604A0021CB9C /* OKNetworker.m */,
 				A9DDFB2B16C42186009D26DE /* OKDirector.m */,
@@ -403,8 +411,6 @@
 				3221C76016C39480008C194B /* OKTwitterUtilities.m */,
 				3221C76116C39480008C194B /* OKUser.h */,
 				3221C76216C39480008C194B /* OKUser.m */,
-				3221C76516C39480008C194B /* OKUserUtilities.h */,
-				3221C76616C39480008C194B /* OKUserUtilities.m */,
 				3221C76716C39480008C194B /* OpenKit.h */,
 				3221C76916C39480008C194B /* SimpleKeychain.h */,
 				3221C76A16C39480008C194B /* SimpleKeychain.m */,
@@ -576,10 +582,10 @@
 				3221C77F16C39480008C194B /* OKTwitterUtilities.m in Sources */,
 				3221C78016C39480008C194B /* OKUser.m in Sources */,
 				3221C78116C39480008C194B /* OKUserProfileImageView.m in Sources */,
-				3221C78216C39480008C194B /* OKUserUtilities.m in Sources */,
 				3221C78416C39480008C194B /* SimpleKeychain.m in Sources */,
 				A9DDFB2C16C42186009D26DE /* OKDirector.m in Sources */,
 				A9E5140C16C4604A0021CB9C /* OKNetworker.m in Sources */,
+				A95224C516C6C7AA00F14FF0 /* OKCrypto.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

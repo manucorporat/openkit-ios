@@ -1,6 +1,6 @@
 //
 //  OKDirector.h
-//  OKDirector
+//  OKClient
 //
 //  Created by Suneet Shah on 12/27/12.
 //  Copyright (c) 2013 OpenKit. All rights reserved.
@@ -12,14 +12,14 @@
 @interface OpenKit : NSObject
 
 + (id)sharedInstance;
+- (OKUser*)getUserForDictionary:(NSDictionary*)dict;
 - (void)saveCurrentUser:(OKUser *)aCurrentUser;
 - (void)logoutCurrentUser;
 
-
-+(void)setApplicationID:(NSString *)appID;
++(void) initializeWithAppID:(NSString *)appID
+                    version:(NSString*)version
+                  secretKey:(NSString*)secretKey;
 +(NSString*)getApplicationID;
-+(void)initializeWithAppID:(NSString *)appID;
-
 +(BOOL)handleOpenURL:(NSURL*)url;
 +(void)handleDidBecomeActive;
 +(void)handleWillTerminate;
