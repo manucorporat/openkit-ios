@@ -6,72 +6,91 @@
 //  Copyright (c) 2013 OpenKit. All rights reserved.
 //
 
-#import "OKScore.h"
-#import "OKUserUtilities.h"
-#import "OKUser.h"
+#import "OKScorePrivate.h"
+#import "OKUserPrivate.h"
 #import "OKDirector.h"
+#import "OKConfig.h"
+#import "OKLeaderboard.h"
 #import "OKNetworker.h"
 
 @implementation OKScore
 
-@synthesize OKLeaderboardID, OKScoreID, scoreValue, user, scoreRank;
+@synthesize leaderboardID, scoreID, scoreValue, user, scoreRank, isPending;
 
-- (id)initFromJSON:(NSDictionary*)jsonDict
+- (id)initWithValue:(NSInteger)integer
+{
+    self = [super init];
+    if (self) {
+        self.scoreValue = integer;
+    }
+    return self;
+}
+
+
+- (id)initWithDictionary:(NSDictionary*)dict
 {
     self = [super init];
     if (self) {
         // Initialization code here.
-        
-        self.OKLeaderboardID = [[jsonDict objectForKey:@"leaderboard_id"] integerValue];
-        self.OKScoreID = [[jsonDict objectForKey:@"id"] integerValue];
-        self.scoreValue = [[jsonDict objectForKey:@"value"] integerValue];
-        self.scoreRank = [[jsonDict objectForKey:@"rank"] integerValue];
-        self.user = [OKUserUtilities createOKUserWithJSONData:[jsonDict objectForKey:@"user"]];
+        leaderboardID   = [[dict objectForKey:OK_KEY_LEADERBOARDID] integerValue];
+        scoreID         = [[dict objectForKey:OK_KEY_ID] integerValue];
+        scoreValue      = [[dict objectForKey:OK_KEY_SCOREVALUE] integerValue];
+        scoreRank       = [[dict objectForKey:OK_KEY_SCORERANK] integerValue];
+        isPending       = [[dict objectForKey:OK_KEY_SCOREPENDING] boolValue];
+        user            = [[OpenKit sharedInstance] getUserForDictionary:[dict objectForKey:@"user"]];
     }
     
     return self;
 }
 
--(NSDictionary*)getScoreParamDict
+
+-(NSDictionary*)representation
 {
-    OKUser *currentUser = [[OpenKit sharedInstance] currentUser];
+    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:
+                          [NSNumber numberWithInt:scoreID], OK_KEY_ID,
+                          [NSNumber numberWithInt:scoreValue], OK_KEY_SCOREVALUE,
+                          [NSNumber numberWithInt:scoreRank], OK_KEY_SCORERANK,
+                          [NSNumber numberWithInt:leaderboardID], OK_KEY_LEADERBOARDID,
+                          [NSNumber numberWithBool:isPending], OK_KEY_SCOREPENDING,
+                          [user JSONRepresentation], @"user", nil];
     
-    NSMutableDictionary *paramDict = [[NSMutableDictionary alloc] initWithCapacity:3];
-    
-    [paramDict setValue:[NSNumber numberWithInt:scoreValue] forKey:@"value"];
-    [paramDict setValue:[NSNumber numberWithInt:OKLeaderboardID] forKey:@"leaderboard_id"];
-    [paramDict setValue:[currentUser OKUserID] forKey:@"user_id"];
-    
-    return paramDict;
+    return dict;
 }
 
--(void)submitScoreWithCompletionHandler:(void (^)(NSError *error))completionHandler
-{
-    //Can only submit scores for the currently logged in user
-    [self setUser:[OKUser currentUser]];
+
+-(NSDictionary*)JSONRepresentation
+{    
+    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:
+                          [NSNumber numberWithInt:scoreValue], OK_KEY_SCOREVALUE,
+                          [NSNumber numberWithInt:leaderboardID], OK_KEY_LEADERBOARDID, nil];
     
-    if (!user) {
-        NSError *noUserError = [[NSError alloc] initWithDomain:OKErrorDomain code:0 userInfo:[NSDictionary dictionaryWithObject:@"No user is logged into openkit. To submit a score, there must be a currently logged in user" forKey:NSLocalizedDescriptionKey]];
-        completionHandler(noUserError);
+    return dict;
+}
+
+
+- (BOOL)isGreaterThan:(OKScore*)score
+{
+    if(!score)
+        return YES;
+    
+    if(self.leaderboardID != score.leaderboardID ) {
+        NSLog(@"Impossible to compare scores.");
+        return NO;
     }
     
-    //Create a request and send it to OpenKit
-    NSDictionary *params = [NSDictionary dictionaryWithObjectsAndKeys:
-                             [self getScoreParamDict], @"score", nil];
-    
-    [OKNetworker postToPath:@"/scores" parameters:params
-                    handler:^(id responseObject, NSError *error)
-     {
-         if(!error) {
-             NSLog(@"Successfully posted score");
-             NSLog(@"Response: %@", responseObject);
-         }else{
-             NSLog(@"Failed to post score");
-             NSLog(@"Error: %@", error);
-         }
-         completionHandler(error);
-     }];
+    return (self.scoreValue > score.scoreValue);
 }
 
+
+- (void)submitTo:(NSInteger)lID withCompletionHandler:(void (^)(NSError *error))completion
+{
+    OKLeaderboard *leaderboard = [OKLeaderboard leaderboardForID:lID];
+    if(!leaderboard && completion) {
+        NSError *error;
+        completion(error);
+    }
+    
+    [leaderboard submitScore:self withCompletionHandler:completion];
+}
 
 @end

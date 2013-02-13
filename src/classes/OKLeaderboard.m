@@ -6,77 +6,144 @@
 //  Copyright (c) 2013 OpenKit. All rights reserved.
 //
 
-#import "OKLeaderboard.h"
+#import "OKLeaderboardPrivate.h"
 #import "OKDirector.h"
-#import "OKUser.h"
-#import "OKScore.h"
+#import "OKConfig.h"
+#import "OKUserPrivate.h"
+#import "OKScorePrivate.h"
 #import "OKHelper.h"
 #import "OKNetworker.h"
 
+static NSArray *_leaderboards = nil;
+
+@interface OKLeaderboard ()
+{
+    NSArray *scores_[OKLeaderboardTimeRange_sentinel];
+}
+
+@end
+
 @implementation OKLeaderboard
 
-@synthesize OKLeaderboard_id, OKApp_id, name, in_development, sortType, icon_url, playerCount;
+@synthesize leaderboardID, name, in_development, sortType, icon_url, playerCount, userScore;
 
-- (id)initFromJSON:(NSDictionary*)jsonDict
+- (id)initWithDictionary:(NSDictionary*)dict
 {
     if ((self = [super init])) {
-        NSString *sortTypeString    = (NSString*)[jsonDict objectForKey:@"sort_type"];
-
-        self.name                   = [jsonDict objectForKey:@"name"];
-        self.OKLeaderboard_id       = [[jsonDict objectForKey:@"id"] integerValue];
-        self.OKApp_id               = [[jsonDict objectForKey:@"app_id"] integerValue];
-        self.in_development         = [[jsonDict objectForKey:@"in_development"] boolValue];
-        self.sortType               = ([sortTypeString isEqualToString:@"HighValue"]) ? HighValue : LowValue;
-        self.icon_url               = [jsonDict objectForKey:@"icon_url"];
-        self.playerCount            = [[jsonDict objectForKey:@"player_count"] integerValue];
-
-        //_timeRange = OKLeaderboardTimeRangeOneDay;
+        [self configWithDictionary:dict];
     }
-
     return self;
 }
 
-- (NSString *)playerCountString
+
+- (void)configWithDictionary:(NSDictionary*)dict
 {
-    return [NSString stringWithFormat:@"%d Players", playerCount];
+    NSString *sortTypeString = [dict objectForKey:@"sort_type"];
+
+    name                = [dict objectForKey:@"name"];
+    leaderboardID       = [[dict objectForKey:OK_KEY_ID] integerValue];
+    in_development      = [[dict objectForKey:@"in_development"] boolValue];
+    sortType            = ([sortTypeString isEqualToString:@"HighValue"]) ? HighValue : LowValue;
+    playerCount         = [[dict objectForKey:@"player_count"] integerValue];
+    
+    if([dict objectForKey:@"icon_url"])
+        icon_url        = [dict objectForKey:@"icon_url"];
+    
+    if([dict objectForKey:@"userScore"])
+        userScore       = [[OKScore alloc] initWithDictionary:[dict objectForKey:@"userScore"]];
 }
 
-+ (void)getLeaderboardsWithCompletionHandler:(void (^)(NSArray* leaderboards, NSError* error))completionHandler
+
+- (void)setUserScore:(OKScore *)score
 {
-    // OK NETWORK REQUEST
-    [OKNetworker getFromPath:@"/leaderboards" parameters:nil
-                     handler:^(id responseObject, NSError *error)
-     {
-         NSMutableArray *leaderboards = nil;
-         if(!error) {
-             NSLog(@"Successfully got list of leaderboards");
-             NSLog(@"Leaderboard response is: %@", responseObject);
-             NSArray *leaderBoardsJSON = (NSArray*)responseObject;
-             leaderboards = [NSMutableArray arrayWithCapacity:[leaderBoardsJSON count]];
-             
-             for(id obj in leaderBoardsJSON) {
-                 OKLeaderboard *leaderBoard = [[OKLeaderboard alloc] initFromJSON:obj];
-                 [leaderboards addObject:leaderBoard];
+    userScore = score;
+    [userScore setLeaderboardID:leaderboardID];
+    [userScore setUser:[OKUser currentUser]];
+    [userScore setIsPending:YES];
+}
+
+
+- (void)pushUserScore:(OKScore*)score
+{
+    if([score isGreaterThan:userScore])
+        [self setUserScore:score];
+}
+
+
+- (void)submitScore:(OKScore*)score withCompletionHandler:(void (^)(NSError *error))completionHandler
+{
+    [self pushUserScore:score];
+    [self resolvePendingScoreWithCompletionHandler:completionHandler];    
+}
+
+
+- (void)resolvePendingScoreWithCompletionHandler:(void (^)(NSError *error))completion
+{
+    if([userScore isPending]) {
+        
+        //Create a request and send it to OpenKit
+        NSDictionary *params = [userScore JSONRepresentation];
+        
+        [OKNetworker postToPath:OK_URL_SCORES
+                     parameters:params
+                        handler:^(id responseObject, NSError *error)
+         {
+             if(!error) {
+                 NSLog(@"Successfully posted score");
+                 [userScore setIsPending:NO];
+             }else{
+                 NSLog(@"Failed to post score.");
+                 NSLog(@"Error: %@", error);
              }
-         }else{
-             NSLog(@"Failed to get list of leaderboards: %@", error);
-         }
-         completionHandler(leaderboards, error);
-     }];
+             if(completion)
+             completion(error);
+         }];
+    }else
+        completion(nil);
 }
 
 
--(void)getScoresForTimeRange:(OKLeaderboardTimeRange)timeRange
-       WithCompletionhandler:(void (^)(NSArray* scores, NSError *error))completionHandler
+- (NSArray*)getScoresForTimeRange:(OKLeaderboardTimeRange)timeRange
+{
+    if(timeRange >= OKLeaderboardTimeRange_sentinel) {
+        NSLog(@"Invalid leaderboard");
+        return nil;
+    }
+    
+    return scores_[timeRange];
+}
+
+
+- (void)getScoresForTimeRange:(OKLeaderboardTimeRange)timeRange
+        withCompletionHandler:(void (^)(NSArray* scores, NSError *error))completion
+{
+    if(timeRange >= OKLeaderboardTimeRange_sentinel) {
+        NSLog(@"Invalid leaderboard");
+        completion(nil, nil);
+        return;
+    }
+    NSArray *scores = scores_[timeRange];
+    int distance = [self.lastUpdate timeIntervalSinceNow];
+    if(scores == nil || distance < -(3600*2)) { // 3600seconds each hour
+        [self fetchScoreForTimeRange:timeRange withCompletionHandler:^(NSArray* array, NSError* error)
+         {
+             if(!error)
+                 completion(array, error);
+             else
+                 completion(scores, error);
+         }];
+    }else{
+        completion(scores, nil);
+    }
+}
+
+
+- (void)fetchScoreForTimeRange:(OKLeaderboardTimeRange)timeRange
+         withCompletionHandler:(void (^)(NSArray* scores, NSError *error))completion
 {
     //Create a request and send it to OpenKit
     NSMutableDictionary *params = [[NSMutableDictionary alloc] init];
-    [params setValue:[NSNumber numberWithInt:[self OKLeaderboard_id]] forKey:@"leaderboard_id"];
-
-    OKUser *u = [OKUser currentUser];
-    if (u) {
-        [params setValue:u.OKUserID forKey:@"user_id"];
-    }
+    [params setValue:[NSNumber numberWithInt:leaderboardID] forKey:@"leaderboard_id"];
     
     if (timeRange != OKLeaderboardTimeRangeAllTime) {
         int days;
@@ -92,7 +159,7 @@
     
     
     // OK NETWORK REQUEST
-    [OKNetworker getFromPath:@"/scores" parameters:params
+    [OKNetworker getFromPath:OK_URL_SCORES parameters:params
                      handler:^(id responseObject, NSError *error)
     {
         NSMutableArray *scores = nil;
@@ -100,21 +167,122 @@
             NSLog(@"Successfully got scores: %@", responseObject);
 
             NSArray *scoresJSON = (NSArray*)responseObject;
-            scores = [NSMutableArray arrayWithCapacity:[scoresJSON count]];
+            NSMutableArray* scores = [NSMutableArray arrayWithCapacity:[scoresJSON count]];
             
-            for(id obj in scoresJSON) {
-                OKScore *score = [[OKScore alloc] initFromJSON:obj];
+            for(NSDictionary *dict in scoresJSON) {
+                OKScore *score = [[OKScore alloc] initWithDictionary:dict];
                 [scores addObject:score];
-                if (u && score.user.OKUserID == u.OKUserID) {
-                    NSLog(@"Current user's score is: %d", score.scoreValue);
-                }
             }
+            scores[timeRange] = [NSArray arrayWithArray:scores];
+            
         }else{
             NSLog(@"Failed to get scores");
         }
-        completionHandler(scores, error);
+        if(completion)
+        completion(scores, error);
     }];
 }
 
+
+#pragma mark - Class methods
+
++ (NSString*)databasePath
+{
+    return [OKHelper persistentPath:OKLEADERBOARD_DB_FILE];
+}
+
+
++ (NSArray*)leaderboards
+{
+    return _leaderboards;
+}
+
+
++ (OKLeaderboard*)leaderboardForID:(NSInteger)ok_id
+{
+    for(OKLeaderboard* leaderboard in [OKLeaderboard leaderboards]) {
+        if(leaderboard.leaderboardID == ok_id)
+            return leaderboard;
+    }
+    return nil;
+}
+
+
++ (void)preload
+{
+    if(_leaderboards) {
+        NSLog(@"[OKCloud preload] only can be called once.");
+        return;
+    }
+    
+    // This method is called automatically by OKDirector when OpenKit is initialized.
+    // We preload the leaderboards from local memory (ROM).
+    
+    NSArray *leaderBoardsJSON = [NSArray arrayWithContentsOfFile:[OKLeaderboard databasePath]];
+    NSMutableArray *leaderBoards = [NSMutableArray arrayWithCapacity:[leaderBoardsJSON count]];
+    
+    for(id obj in leaderBoardsJSON) {
+        OKLeaderboard *leaderBoard = [[OKLeaderboard alloc] initWithDictionary:obj];
+        [leaderBoards addObject:leaderBoard];
+    }
+    _leaderboards = [NSArray arrayWithArray:leaderBoards];
+}
+
+
++ (void)resolveWithCompletionHandler:(void (^)(NSError* error))completion
+{
+    // TRY TO RESOLVE
+    __block int total = [_leaderboards count];
+    __block int count = 0;
+    for(OKLeaderboard *leaderboard in _leaderboards) {
+        [leaderboard resolvePendingScoreWithCompletionHandler:^(NSError *error)
+         {
+             ++count;
+             if(total == count)
+                 completion(error);
+         }];
+    }
+    
+
+}
+
+
++ (void)syncWithCompletionHandler:(void (^)(NSError* error))completion
+{
+    [OKLeaderboard resolveWithCompletionHandler:^(NSError *error)
+     {
+         // OK NETWORK REQUEST
+         [OKNetworker getFromPath:OK_URL_LEADERBOARDS
+                       parameters:nil
+                          handler:^(id responseObject, NSError *error)
+          {
+              if(!error) {
+                  NSLog(@"Successfully got list of leaderboards");
+                  NSLog(@"Leaderboard response is: %@", responseObject);
+                  NSArray *leaderBoardsJSON = (NSArray*)responseObject;
+                  NSMutableArray *leaderboards = [NSMutableArray arrayWithCapacity:[leaderBoardsJSON count]];
+                  
+                  for(id obj in leaderBoardsJSON) {
+                      OKLeaderboard *board = [OKLeaderboard leaderboardForID:[[obj objectForKey:OK_KEY_ID] integerValue]];
+                      if(board)
+                          [board configWithDictionary:obj];
+                      else
+                          board = [[OKLeaderboard alloc] initWithDictionary:obj];
+                      
+                      [leaderboards addObject:board];
+                  }
+                  
+                  // Set leaderboards and save in memory
+                  _leaderboards = [NSArray arrayWithArray:leaderboards];
+                  [leaderBoardsJSON writeToFile:[OKLeaderboard databasePath] atomically:YES];
+                  
+              }else{
+                  NSLog(@"Failed to get list of leaderboards: %@", error);
+              }
+              if(completion)
+                  completion(error);
+          }];
+     }];
+}
 
 @end

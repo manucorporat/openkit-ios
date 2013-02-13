@@ -9,8 +9,10 @@
 #ifndef OKClient_OKDefines_h
 #define OKClient_OKDefines_h
 
-#define OKBaseURL @"http://stage.openkit.io/"
 #define OKErrorDomain @"OKError"
 #define OKCLOUD_DB_FILE @"OKCloud.plist"
+#define OKLEADERBOARD_DB_FILE @"OKLeaderboard.plist"
+
+
 
 #endif  // end if OKClient_OKDefines_h

@@ -16,23 +16,29 @@ typedef enum {
 typedef enum {
     OKLeaderboardTimeRangeOneDay,
     OKLeaderboardTimeRangeOneWeek,
-    OKLeaderboardTimeRangeAllTime
+    OKLeaderboardTimeRangeAllTime,
+    
+    OKLeaderboardTimeRange_sentinel,
 } OKLeaderboardTimeRange;
 
 
+@class OKScore;
 @interface OKLeaderboard : NSObject
 
-@property (nonatomic) int OKApp_id;
-@property (nonatomic) NSInteger OKLeaderboard_id;
-@property (nonatomic) BOOL in_development;
-@property (nonatomic, strong) NSString *name;
-@property (nonatomic) LeaderBoardSortType sortType;
-@property (nonatomic, strong) NSString *icon_url;
-@property (nonatomic) int playerCount;
+@property (nonatomic, readonly) NSInteger leaderboardID;
+@property (nonatomic, readonly) BOOL in_development;
+@property (nonatomic, strong, readonly) NSString *name;
+@property (nonatomic, readonly) LeaderBoardSortType sortType;
+@property (nonatomic, strong, readonly) NSString *icon_url;
+@property (nonatomic, strong, readonly) NSDate *lastUpdate;
+@property (nonatomic, strong) OKScore *userScore;
+@property (nonatomic, readonly) int playerCount;
 
-+ (void)getLeaderboardsWithCompletionHandler:(void (^)(NSArray* leaderboards, NSError* error))completionHandler;
-- (NSString *)playerCountString;
-- (id)initFromJSON:(NSDictionary*)jsonDict;
-- (void)getScoresForTimeRange:(OKLeaderboardTimeRange)timeRange WithCompletionhandler:(void (^)(NSArray* scores, NSError *error))completionHandler;
+- (void)submitScore:(OKScore*)score withCompletionHandler:(void (^)(NSError *error))completionHandler;
+- (NSArray*)getScoresForTimeRange:(OKLeaderboardTimeRange)timeRange;
+- (void)getScoresForTimeRange:(OKLeaderboardTimeRange)timeRange withCompletionHandler:(void (^)(NSArray* scores, NSError *error))completion;
 
++ (NSArray*)leaderboards;
++ (OKLeaderboard*)leaderboardForID:(NSInteger)ok_id;
++ (void)syncWithCompletionHandler:(void (^)(NSError* error))handler;
 @end

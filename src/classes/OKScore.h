@@ -11,13 +11,15 @@
 @class OKUser;
 @interface OKScore : NSObject
 
-@property (nonatomic) NSInteger OKScoreID;
 @property (nonatomic) NSInteger scoreValue;
-@property (nonatomic) NSInteger OKLeaderboardID;
+@property (nonatomic) NSInteger leaderboardID;
+@property (nonatomic, readonly) NSInteger scoreID;
+@property (nonatomic, readonly) NSInteger scoreRank;
 @property (nonatomic, strong) OKUser *user;
-@property (nonatomic) NSInteger scoreRank;
+@property (nonatomic) BOOL isPending;
 
-- (id)initFromJSON:(NSDictionary*)jsonDict;
-- (void)submitScoreWithCompletionHandler:(void (^)(NSError *error))completionHandler;
+- (id)initWithValue:(NSInteger)integer;
+- (void)submitTo:(NSInteger)leaderboardID withCompletionHandler:(void (^)(NSError *error))completion;
+- (BOOL)isGreaterThan:(OKScore*)score;
 
 @end
