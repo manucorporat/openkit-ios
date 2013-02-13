@@ -11,5 +11,6 @@
 
 #define OKBaseURL @"http://stage.openkit.io/"
 #define OKErrorDomain @"OKError"
+#define OKCLOUD_DB_FILE @"OKCloud.plist"
 
 #endif  // end if OKClient_OKDefines_h

@@ -10,7 +10,11 @@
 
 @interface OKCloud : NSObject
 
-+ (void)set:(id)obj key:(NSString *)key completion:(void (^)(id obj, NSError *err))completion;
-+ (void)get:(NSString *)key completion:(void (^)(id obj, NSError *err))completion;
++ (void)setObject:(id)obj forKey:(NSString *)key;
++ (id)objectForKey:(NSString*)key;
++ (void)syncWithCompletionHandler:(void (^)(NSError *error))completion;
++ (void)pushWithCompletionHandler:(void (^)(NSError *error))completion;
++ (void)preload;
++ (void)save;
 
 @end

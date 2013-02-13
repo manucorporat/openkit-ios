@@ -79,7 +79,8 @@ enum OKTableViewSections {
 {
     [spinner startAnimating];
     
-    [self.leaderboard getScoresForTimeRange:range WithCompletionhandler:^(NSArray *scores, NSError *error) {
+    [self.leaderboard getScoresForTimeRange:range withCompletionHandler:^(NSArray *scores, NSError *error)
+    {
         [spinner stopAnimating];
         
         if (error) {
@@ -122,7 +123,7 @@ enum OKTableViewSections {
     {
         OKScore *score = [scores objectAtIndex:x];
         
-        if([[score user] OKUserID] == [[OKUser currentUser] OKUserID])
+        if([[score user] userID] == [[OKUser currentUser] userID])
         {
             [self setCurrentUserScore:score];
             return;
@@ -256,13 +257,13 @@ enum OKTableViewSections {
         case 0:
             if(numSections == 2)
                 return @"Your High Score";
-            else
-                return [self.leaderboard playerCountString];
-            break;
-            
-        default:
-            return [self.leaderboard playerCountString];
-            break;
+//            else
+//                return [self.leaderboard playerCountString];
+//            break;
+//            
+//        default:
+//            return [self.leaderboard playerCountString];
+//            break;
     }
 }
 

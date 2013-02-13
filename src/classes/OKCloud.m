@@ -18,102 +18,184 @@
 #define USE_JSONKIT  1
 
 
+
 #import "OKCloud.h"
 #import "OKUser.h"
+#import "OKConfig.h"
+#import "OKHelper.h"
 #import "OKNetworker.h"
 #import "JSONKit.h"
 
+static NSMutableDictionary *_entries = nil;
+static NSDate *_lastUpdated = nil;
 
-static void
-encodeObj(id obj, NSString **strOut, NSError **errOut)
+@interface OKCloudObject : NSObject <NSCoding>
+@property (nonatomic, strong) id obj;
+@property (nonatomic, strong) NSDate *lastUpdate;
+@end
+
+@implementation OKCloudObject
+
+- (id)initWithCoder:(NSCoder *)aDecoder
 {
-#if USE_JSONKIT
-    JKSerializeOptionFlags opts = JKSerializeOptionNone;
-    if ([obj isKindOfClass:[NSString class]]) {
-        *strOut = [obj JSONStringWithOptions:opts includeQuotes:YES error:errOut];
+    self = [super init];
+    if (self) {
+        self.obj = [aDecoder decodeObjectForKey:@"object"];
+        self.lastUpdate = [aDecoder decodeObjectForKey:OK_KEY_LASTUPDATE];
     }
-    else {
-        *strOut = [obj JSONStringWithOptions:opts error:errOut];
-    }
-    NSLog(@"Json is: %@", *strOut);
-#else
-    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:obj options:NULL error:errOut];
-    if (!*errOut) {
-        *strOut = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-        NSLog(@"Json is: %@", *strOut);
-    }
-#endif
+    return self;
 }
 
-static id
-decodeObj(NSData *dataIn, NSError **errOut)
+-(void)encodeWithCoder:(NSCoder *)aCoder
 {
-#if USE_JSONKIT
-    JSONDecoder *decoder = [JSONDecoder decoderWithParseOptions:JKParseOptionNone];
-    id obj = [decoder objectWithData:dataIn error:errOut];
-    return obj;
-#else
-    NSJSONReadingOptions opts = NSJSONReadingAllowFragments | NSJSONReadingMutableContainers | NSJSONReadingMutableLeaves;
-    return [NSJSONSerialization JSONObjectWithData:dataIn options:opts error:errOut];
-#endif
+    [aCoder encodeObject:self.obj forKey:@"object"];
+    [aCoder encodeObject:self.lastUpdate forKey:OK_KEY_LASTUPDATE];
 }
+
+@end
 
 
 @implementation OKCloud
 
-
-+ (void)set:(id)obj key:(NSString *)key completion:(void (^)(id obj, NSError *err))completion
++ (void)setObject:(id)obj forKey:(NSString *)key
 {
-    OKUser *user = [OKUser currentUser];
-    NSAssert(user != nil, @"User must be logged in to use OKCloud");
-    NSError *err;
-    NSString *objRep;
+    if(obj == nil)
+        obj = [NSNull null];
+    
+    OKCloudObject *wrapper = [[OKCloudObject alloc] init];
+    [wrapper setObj:obj];
+    [wrapper setLastUpdate:[NSDate date]];
+    
+    [_entries setObject:wrapper forKey:key];
+}
 
-    encodeObj(obj, &objRep, &err);
 
-    NSDictionary *params = [NSDictionary dictionaryWithObjectsAndKeys:
-                            user.OKUserID,  @"user_id",
-                            key,            @"field_key",
-                            objRep,         @"field_value",
-                            nil];
++ (id)objectForKey:(NSString*)key
+{
+    OKCloudObject *wrapper = [_entries objectForKey:key];
+    if([wrapper obj]==[NSNull null])
+        return nil;
+    
+    return [wrapper obj];
+}
 
-    [OKNetworker postToPath:@"/developer_data"
-                 parameters:params
-                    handler:^(id responseObject, NSError *error)
+
+#pragma mark - Local recovery methods
+
++ (NSString*) databasePath
+{
+    return [OKHelper persistentPath:OKCLOUD_DB_FILE];
+}
+
+
++ (void)preload
+{
+    if(_entries) {
+        NSLog(@"[OKCloud preload] only can be called once.");
+        return;
+    }
+    
+    // This method is called automatically by OKDirector when OpenKit is initialized.
+    // We preload the dictionary of cloud savings from local memory (ROM).
+    // This makes OKCloud able to work offline and reduces drastically the internet usage.
+    NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:[OKCloud databasePath]];
+    if(dict) {
+        _entries = [NSMutableDictionary dictionaryWithDictionary:[dict objectForKey:OK_KEY_ENTRIES]];
+        _lastUpdated = [dict objectForKey:OK_KEY_LASTUPDATE];
+    }else{
+        _entries = [NSMutableDictionary dictionaryWithCapacity:10];
+        _lastUpdated = [NSDate distantPast];
+    }
+}
+
+
++ (void)saveLocally
+{
+    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:
+                          _entries, OK_KEY_ENTRIES,
+                          _lastUpdated, OK_KEY_LASTUPDATE, nil];
+    
+    [dict writeToFile:[OKCloud databasePath] atomically:YES];
+}
+
+
+#pragma mark - High level saving method
+
++ (void)save
+{
+    // This method should be called before the app is going to background
+    
+    // we save it locally
+    [OKCloud saveLocally];
+    
+    // we try to sync it
+    [OKCloud pushWithCompletionHandler:^(NSError *error) {
+        [OKCloud saveLocally];
+    }];
+}
+
+
+#pragma mark - Server/Client synchronization methods
+
++ (NSDictionary*)getDirtyEntries
+{
+    NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithCapacity:[_entries count]];
+    [_entries enumerateKeysAndObjectsWithOptions:0 usingBlock:^(id key, id obj, BOOL *stop)
      {
-         completion(responseObject, error);
+         OKCloudObject *wrapper = obj;
+         NSTimeInterval time = [_lastUpdated timeIntervalSinceDate:[wrapper lastUpdate]];
+         if(time < 0)
+             [dict setObject:wrapper forKey:key];
+     }];
+    return dict;
+}
+
+
+#pragma mark Networking
+
++ (void)syncWithCompletionHandler:(void (^)(NSError *error))completion
+{
+    // This method is called automatically by OKDirector when OpenKit is inialized.
+    // We request to the server new/updated entries based in the last time the local date base was updated.
+    OKUser *user = [OKUser currentUser];
+    if(!user) {
+        if(completion)
+        completion(nil);
+        return;
+    }
+    
+    // The sync protocol perform a simple merge between both sides (client/server)
+    // First. My get the dirty entries based in his last update date.
+    // We send the dirty entries to the server-
+    // The server updates his database internally and responds with the
+    // entries that should change in the client.
+    NSDictionary *params = [NSDictionary dictionaryWithObjectsAndKeys:
+                            _lastUpdated, OK_KEY_LASTUPDATE,
+                            [self getDirtyEntries], OK_KEY_ENTRIES, nil];
+    
+    [OKNetworker getFromPath:OK_URL_CLOUD
+                  parameters:params
+                     handler:^(id responseObject, NSError *error)
+     {
+         if (!error) {
+             [_entries enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+                 [self setObject:obj forKey:key];
+             }];
+             _lastUpdated = [NSDate date];
+         }
+         if(completion)
+             completion(error);
      }];
 }
 
-+ (void)get:(NSString *)key completion:(void (^)(id obj, NSError *err))completion
-{
-    OKUser *user = [OKUser currentUser];
-    NSAssert(user != nil, @"User must be logged in to use OKCloud");
-    NSDictionary *params = [NSDictionary dictionaryWithObjectsAndKeys:
-                            user.OKUserID,  @"user_id",
-                            nil];
 
-    NSString *path = [NSString stringWithFormat:@"/developer_data/%@", key];
-    
-    [OKNetworker getFromPath:path
-                  parameters:params
-                     handler:^(id responseObject, NSError *error)
-    {
-#ifdef DEBUG
-         OKLog(@"OKCloud Response: %@", [[NSString alloc] initWithData:responseObject encoding:NSUTF8StringEncoding]);
-#endif
-         id o = nil;
-         if (!error) {
-             NSDictionary *dict = decodeObj(responseObject, &error);
-             if (!error) {
-                 o = [dict objectForKey:key];
-                 if ([o isKindOfClass:[NSNull class]]) {
-                     o = nil;
-                 }
-             }
-         }
-         completion(o, error);
-     }];
++ (void)pushWithCompletionHandler:(void (^)(NSError *error))completion
+{
+    // We sync with the server if some entry is dirty
+    if([[OKCloud getDirtyEntries] count] > 0)
+        [self syncWithCompletionHandler:completion];
+    else if(completion)
+        completion(nil);
 }
 
 @end

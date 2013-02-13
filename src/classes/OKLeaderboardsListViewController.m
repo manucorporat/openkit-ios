@@ -74,19 +74,13 @@
 
 - (void)getListOfLeaderboards
 {
-    [spinner startAnimating];
+    //[spinner startAnimating];
     
-    [OKLeaderboard getLeaderboardsWithCompletionHandler:^(NSArray *leaderboards, NSError *error) {
+    NSArray *leaderboards = [OKLeaderboard leaderboards];
+    [self setOKLeaderBoardsList:leaderboards];
+    [_tableView reloadSections:[NSIndexSet indexSetWithIndex:0] withRowAnimation:UITableViewRowAnimationAutomatic];
         
-        [spinner stopAnimating];
-        
-        if (error) {
-            //TODO handdle error
-        } else {
-            [self setOKLeaderBoardsList:leaderboards];
-            [_tableView reloadSections:[NSIndexSet indexSetWithIndex:0] withRowAnimation:UITableViewRowAnimationAutomatic];
-        }
-    }];
+    //[spinner stopAnimating];
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
