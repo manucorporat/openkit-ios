@@ -23,7 +23,7 @@ Authorization		# defined in oauth 1.0a specification
 
 
 2. **Openkit should use HTTPS**  
-HTTPS is recommended for a superior security level. ***Oauth 1.0a protocol*** is safe even over HTTP but openkit sends the credentials(see 4.1) in plaintext during login.
+HTTPS is recommended for a superior security level. ***Oauth 1.0a protocol*** is safe even over HTTP but *openkit* sends the credentials(see 3.4) in plaintext during login.
 
 
 3. **Security configurations**  
@@ -68,7 +68,7 @@ Consumer secret provided by [oauth](http://oauth.net/core/1.0/#anchor6).
 
 
 ##3. AUTHORIZATION
-(you need valid credentials(see 4.1) to get the access_token(see 4.1))
+(you need valid credentials(see 3.4) to get the access_token(see 3.5))
 
 1. **OAUTH 1.0a**  
 Openkit uses the [standardized oauth 1.0a protocol](http://tools.ietf.org/html/rfc5849).
@@ -103,7 +103,7 @@ Oauth was designed to provide authorized access to "untrusted" third party consu
 ```
 
 
-4. **Server's respond:**  
+5. **Server's respond:**  
 (If login was successful)
 
 	```
