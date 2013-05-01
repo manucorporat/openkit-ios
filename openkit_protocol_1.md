@@ -23,7 +23,7 @@ Authorization		# defined in oauth 1.0a specification
 
 
 2. **Openkit should use HTTPS**  
-HTTPS is recommended for a superior security level. ***Oauth 1.0a protocol*** is safe even over HTTP but openkit sends the credentials in plaintext during login.
+HTTPS is recommended for a superior security level. ***Oauth 1.0a protocol*** is safe even over HTTP but openkit sends the credentials(see 4.1) in plaintext during login.
 
 
 3. **Security configurations**  
@@ -85,13 +85,17 @@ The HTTP body is not included in the signature base string.
 Oauth was designed to provide authorized access to "untrusted" third party consumers (3-legged authorization). Obviously in this case (openkit), both, server and clients(app) are managed by the same developer so we shouldn't redirect the user to an external login through the browser. The request_token step is omitted.
 [https://dev.twitter.com/docs/oauth/xauth](https://dev.twitter.com/docs/oauth/xauth)
 
+
+	4.1. **Login credential**  
+	Credentials are used to get an valid openkit's access_token. Similarly the openkit server use the  ```*((access_token provided by the service))``` provided by the service (facebook, twitter, etc.) to valide the credentials.
+	
 	```
 {
 	# dictionary of services: facebook, twitter, etc. # 
 	"*((service's name))" :
 	{
 		"user_id" : ((user_id in service)),
-		"access_token" : ((access token provided by the service)),
+		"access_token" : *((access_token provided by the service)),
 	},
 	...
 }
