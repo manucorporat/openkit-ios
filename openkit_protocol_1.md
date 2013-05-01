@@ -47,7 +47,7 @@ POSIX time, seconds since ```1/1/1970  00:00:00```
 
 
 3. **((user's id))**  
-It's a hash value (HMAC) of the user's index, because of security reasons the user's id is not an integer. It should be a non-sequential string like ```fsd3d3459f9a```.
+Because of security reasons the user's id is not an integer. It should be a non-sequential string like ```fsd3d3459f9a```.
 
 
 4. **((service's name))**  
@@ -68,6 +68,7 @@ Consumer secret provided by [oauth](http://oauth.net/core/1.0/#anchor6).
 
 
 ##3. AUTHORIZATION
+(you need valid credentials(see 4.1) to get the access_token(see 4.1))
 
 1. **OAUTH 1.0a**  
 Openkit uses the [standardized oauth 1.0a protocol](http://tools.ietf.org/html/rfc5849).
@@ -82,7 +83,7 @@ The HTTP body is not included in the signature base string.
 
 
 4. **Client's request, based in x-auth (idea from twitter's oauth fork)**  
-Oauth was designed to provide authorized access to "untrusted" third party consumers (3-legged authorization). Obviously in this case (openkit), both, server and clients(app) are managed by the same developer so we shouldn't redirect the user to an external login through the browser. The request_token step is omitted.
+Oauth was designed to provide authorized access to "untrusted" third party consumers (3-legged authorization). Obviously in this case (openkit), both, server(provider) and app(consumer) are managed by the same developer so we shouldn't redirect the user to an external login through the browser. The request_token step is omitted.
 [https://dev.twitter.com/docs/oauth/xauth](https://dev.twitter.com/docs/oauth/xauth)
 
 	4.1. **Login credentials**  
@@ -115,6 +116,7 @@ See:
 
 
 ##4. AUTHORIZED SERVICES
+(you need a valid access_token for these tasks)
 
 ###1. OKUSER###
 Updating OKUser (currently "nick" is the only one attribute)
@@ -303,7 +305,7 @@ Used internally by the SDK to optimize the internet usage. Inspired by ```HTTP 3
 	**((leaderboard's icon data))** is a PNG representation of the image encoded in base64.  
 	
 	**((leaderboards's format))** is used for proper representation.
-	- 0: real (example: ```6,435,242``` )
+	- 0: number (example: ```6,435,242``` )
 	- 1: time (example: ```1'  23.2"```  #one minute and 23.2 seconds )
 	
 	
@@ -377,3 +379,14 @@ For example, if ```((time range))``` is equal to:
 	...
 ]
 ```
+
+##6. APPENDIXES
+
+###Example 1: Login flow with facebook
+1. Getting the user_id and access_token from facebook: (see 3)   
+	The user logs in facebook, and the SDK returns the user's id and an facebook's oauth_token.
+	
+2. Getting a access_token for openkit: (see 3)  
+	We send the facebook's userID and oauth_token as credentials to get a openkit's access_token.
+	
+3. Once we have a valid access_token, we can do any "Authorized Service" (see 4)	
