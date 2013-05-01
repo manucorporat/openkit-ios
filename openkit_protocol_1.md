@@ -1,7 +1,7 @@
 OPENKIT'S PROTOCOL 1.0 draft3
 =======
 
-###0. Legend##
+###0. Legend
 
 ```
 	#comments
@@ -10,7 +10,7 @@ OPENKIT'S PROTOCOL 1.0 draft3
 
 
 
-##1. APPLICATION PROTOCOL##
+##1. APPLICATION PROTOCOL
 
 1. **HTTP header (POST and GET)**  
 
@@ -35,7 +35,7 @@ This method needs additional logic in the client side.
 
 
 
-##2. DEFINITIONS##
+##2. DEFINITIONS
 
 1. **((openkit's protocol version))**  
 Backward compatibility design. This value should be the version implemented in the client (initially "1.0")
@@ -67,7 +67,7 @@ Consumer secret provided by [oauth](http://oauth.net/core/1.0/#anchor6).
 
 
 
-##3. AUTHORIZATION##
+##3. AUTHORIZATION
 
 1. **OAUTH 1.0a**  
 Openkit uses the [standardized oauth 1.0a protocol](http://tools.ietf.org/html/rfc5849).
@@ -85,9 +85,9 @@ The HTTP body is not included in the signature base string.
 Oauth was designed to provide authorized access to "untrusted" third party consumers (3-legged authorization). Obviously in this case (openkit), both, server and clients(app) are managed by the same developer so we shouldn't redirect the user to an external login through the browser. The request_token step is omitted.
 [https://dev.twitter.com/docs/oauth/xauth](https://dev.twitter.com/docs/oauth/xauth)
 
-
-	4.1. **Login credential**  
-	Credentials are used to get an valid openkit's access_token. Similarly the openkit server use the  ```*((access_token provided by the service))``` provided by the service (facebook, twitter, etc.) to valide the credentials.
+	4.1. **Login credentials**  
+	Credentials are used to get an valid openkit's access_token. Similarly the openkit server use the  ```*((access_token provided by the service))``` provided by the service (facebook, twitter, etc.) to valide the credentials.  
+	The path and method is defined in oauth. For example ```oauth/access_token``` (POST)
 	
 	```
 {
@@ -106,20 +106,21 @@ Oauth was designed to provide authorized access to "untrusted" third party consu
 (If login was successful)
 
 	```
-{
-	"oauth_token" : ((user's access token)), 	
-}
+	oauth_token=((user's access token))&oauth_token_secret=((user's token secret))
 ```
+See:
+	- [https://dev.twitter.com/docs/oauth/xauth](https://dev.twitter.com/docs/oauth/xauth)
+	- [http://oauth.net/core/1.0/#anchor29](http://oauth.net/core/1.0/#anchor29)
 
 
 
-##4. AUTHORIZED SERVICES##
+##4. AUTHORIZED SERVICES
 
 ###1. OKUSER###
 Updating OKUser (currently "nick" is the only one attribute)
 ***
 
-1. **Path:** ```/user``` (POST)
+1. **Path & method:** ```/user``` (POST)
 
 
 2. **Checking access_token**  
@@ -154,11 +155,11 @@ A void request to user can be used to check quickly if the access_token is still
 
 
 
-###2. OKCLOUD###
+###2. OKCLOUD
 Synchronizing data entries between client and server. This protocol implements a simple toolkit to resolve conflicts if several devices modify the same values.
 ***
 
-1. **Path:** ```/cloud``` (POST)
+1. **Path & method:** ```/cloud``` (POST)
 
 
 2. **((priority))**  
@@ -211,11 +212,11 @@ It's a timestamp managed by the server that indicates the date of the last sync 
 
 
 
-###3. OKSCORE###
+###3. OKSCORE
 Posting scores to server.
 ***
 
-1. **Path:** ```/post_score``` (POST)
+1. **Path & method:** ```/post_score``` (POST)
 
 
 2. **Client's request:**
@@ -259,11 +260,11 @@ Unauthorized tasks use the GET method.
 Getting the list of leaderboards for the specified app.
 ***
 
-1. **Path:** ```/leaderboards``` (GET)
+1. **Path & method:** ```/leaderboards``` (GET)
 
 
 2. **((timestamp))**  
-Used internally by the SDK to optimize the internet usage. Inspired by ```HTTP 304 Not Modified``` code status.
+Used internally by the SDK to optimize the internet usage. Inspired by ```HTTP 304 Not Modified``` error code.
 
 
 3. **Client's request:**  
@@ -301,14 +302,14 @@ Used internally by the SDK to optimize the internet usage. Inspired by ```HTTP 3
 ```
 	**((leaderboard's icon data))** is a PNG representation of the image encoded in base64.  
 	
-	**((leaderboards's format))** Used for proper representation.
+	**((leaderboards's format))** is used for proper representation.
 	- 0: real (example: ```6,435,242``` )
 	- 1: time (example: ```1'  23.2"```  #one minute and 23.2 seconds )
 	
 	
 	**((leaderboard's sort type))**  
-	- 0: descending (higher is best)
-	- 1: ascending (lower is best)
+	- 0: descending (higher is better)
+	- 1: ascending (lower is better)
 
 
 
@@ -316,7 +317,7 @@ Used internally by the SDK to optimize the internet usage. Inspired by ```HTTP 3
 Getting the list of scores for the specified leaderboard.
 ***
  
-1. **Path:** ```/best_scores/(*)``` (GET)  
+1. **Path & method:** ```/best_scores/(*)``` (GET)  
 To make it consistent and reusable, all these paths should use the same request/respond protocol explained later:
 	- ```/best_scores```   #best worldwide scores (no filter)
 	- ```/best_scores/user/((user's id))/```   #best user scores
