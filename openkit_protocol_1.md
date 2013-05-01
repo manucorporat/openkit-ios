@@ -22,12 +22,12 @@ Authorization		# defined in oauth 1.0a specification
 ```
 
 
-2. **Openkit should use HTTPS**  
+2. ***Openkit* should use HTTPS**  
 HTTPS is recommended for a superior security level. ***Oauth 1.0a* protocol** is safe even over HTTP but *openkit* sends the credentials(see 3.4) in plaintext during login.
 
 
 3. **Security configurations**  
-	1. [Low security] No SSL certificate. (plain http)
+	1. [Low security] No SSL certificate (plain http).
 	2. [Medium security] CA signed SSL certificate in server side.
 	3. [High security] CA or self-signed SSL certificate shared in both sides, server and client. [trusted-ssl-certificates](http://www.indelible.org/ink/trusted-ssl-certificates/)  
 	This method provides the maximum security level. Invulnerable to man-in-the-middle attacks.
@@ -51,11 +51,11 @@ Because of security reasons the user's id is not an integer. It should be a non-
 
 
 4. **((service's name))**  
-For example: "*facebook*", "*twitter*"…
+For example: *"facebook"*, *"twitter"*…
 
 
 5. **((user_id in service))**  
-For example ```10001302592140``` (user-id in *facebook*)
+For example: ```10001302592140``` ( user-id in *facebook* )
 
 
 6. **((app's key))**  
@@ -68,7 +68,7 @@ Consumer secret provided by *[oauth](http://oauth.net/core/1.0/#anchor6)*.
 
 
 ##3. AUTHORIZATION
-(you need valid credentials(see 3.4) to get the access_token(see 3.5))
+Valid credentials (see 3.4) are needed to get an openkit's access_token (see 3.5).
 
 1. ***OAUTH 1.0a***  
 *Openkit* uses the [standardized *oauth 1.0a* protocol](http://tools.ietf.org/html/rfc5849).
@@ -83,12 +83,12 @@ The HTTP body is not included in the signature base string.
 
 
 4. **Client's request, based in x-auth (idea from *twitter*'s *oauth* fork)**  
-*Oauth* was designed to provide authorized access to "untrusted" third party consumers (3-legged authorization). Obviously in this case (*openkit*), both, server(provider) and app(consumer) are managed by the same developer so we shouldn't redirect the user to an external login through the browser. The request_token step is omitted.
+*Oauth* was designed to provide authorized access to "untrusted" third party consumers ( 3-legged authorization ). Obviously in this case ( *openkit* ), both, server(provider) and app(consumer) are managed by the same developer so we shouldn't redirect the user to an external login through the browser. The request_token step is omitted.
 [https://dev.twitter.com/docs/oauth/xauth](https://dev.twitter.com/docs/oauth/xauth)
 
 	4.1. **Login credentials**  
-	Credentials are used to get an valid *openkit*'s access_token. Similarly the openkit server use the  ```*((access_token provided by the service))``` provided by the service (*facebook*, *twitter*, etc.) to valide the credentials.  
-	The path and method is defined in *oauth*. For example ```oauth/access_token``` (POST)
+	Credentials are used to get an valid *openkit*'s access_token. Similarly, the openkit server use the  ```*((access_token provided by the service))``` provided by the service ( *facebook*, *twitter*, etc. ) to valide the credentials.  
+	The path and method are defined in *oauth*. For example ```oauth/access_token``` (POST)
 	
 	```
 {
@@ -104,7 +104,7 @@ The HTTP body is not included in the signature base string.
 
 
 5. **Server's respond:**  
-(If login was successful)
+( If login was successful, ie, the server validated that the credentials were valid. )
 
 	```
 	oauth_token=((user's access token))&oauth_token_secret=((user's token secret))
@@ -116,10 +116,10 @@ See:
 
 
 ##4. AUTHORIZED SERVICES
-(you need a valid access_token for these tasks)
+A valid access_token is needed to do this kind of tasks.
 
 ###1. OKUSER
-Updating OKUser (currently "nick" is the only one attribute)
+Updating OKUser (currently "nick" is the only one attribute).
 ***
 
 1. **Path & method:** ```/user``` (POST)
@@ -329,7 +329,7 @@ To make it consistent and reusable, all these paths should use the same request/
 	- ```/best_scores/user/((user's id))```	best user scores
 	- ```/best_scores/friends/((user's id))```	best scores from friends
 	
-	Comment: ((user's id)) is not a parameter because it is not always needed. ( worldwide scores )
+	Comment: ((user's id)) is not a parameter because it is not always needed ( worldwide scores ).
 	
 	
 2. **Client's request:**
@@ -354,7 +354,7 @@ For example, if ```((time range))``` is equal to:
 	**((size))** from 5 to 50  
 	Number of scores to respond.
 
-	**((offset))** from 0 to (2^32 - 1)  
+	**((offset))** from 0 to 2^32-1  
 	Example: getting the best scores from rank 30 to 45: ```/best_scores?offset=30&size=15...```
 
 
