@@ -282,7 +282,7 @@ Used internally by the SDK to optimize the internet usage. Inspired by ```HTTP 3
 	"last_update" : *((timestamp))   #optional
 }
 ```
-Example: ```/leaderboards?app_key=frf3352s2```
+Example: getting leaderboards of the app "frf3352s2". ```/leaderboards?app_key=frf3352s2```
 
 
 4. **Server's response:**  
@@ -326,10 +326,12 @@ Getting a list of scores for the specified leaderboard.
 1. **Path & method:** ```/best_scores/(*)``` (GET)  
 To make it consistent and reusable, all these paths should use the same request/respond protocol explained later:
 	- ```/best_scores```	best worldwide scores (no filter)
-	- ```/best_scores/user/((user's id))```	best user scores
-	- ```/best_scores/friends/((user's id))```	best scores from friends
+	- ```/best_scores/user-((user's id))```	best user scores
+	- ```/best_scores/friends-((user's id))```	best scores from friends  
 	
-	Comment: ((user's id)) is not a parameter because it is not always needed ( worldwide scores ).
+	Example: getting best scores from user "hg44gsew3". ```/best_scores/user-hg44gsew3```  
+	Syntactically it can be understood as a request ( ```best_scores``` ) and a filter ( ```user-hg44gsew3``` ).
+
 	
 	
 2. **Client's request:**
@@ -347,15 +349,15 @@ To make it consistent and reusable, all these paths should use the same request/
 	**((range))**  
 	Unsigned integer. The server will responds with the top scores submitted in the last ```((time range))``` seconds. This allows developers the highest flexibility.
 For example, if ```((time range))``` is equal to:
-	- ```24*60*60*1``` : the server will responds with the top scores of the last day.
-	- ```24*60*60*7``` : scores from the last week...
-	- ```2^32-1``` : ~all-time scores (default value)
+	- ```24*60*60*1```, the server would respond with the scores of the last day.
+	- ```24*60*60*7```, scores from the last week...
+	- ```2^32-1```, ~all-time scores (default value)
 
 	**((size))** from 5 to 50  
 	Number of scores to respond.
 
 	**((offset))** from 0 to 2^32-1  
-	Example: getting the best scores from rank 30 to 45: ```/best_scores?offset=30&size=15...```
+	Example: getting the best scores from rank 30 to 45. ```/best_scores?offset=30&size=15...```
 
 
 3. **Server's respond:**
