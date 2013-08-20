@@ -9,28 +9,24 @@
 #import "OKAppDelegate.h"
 #import "OpenKit.h"
 #import "OKViewController.h"
+#import "OKGameCenterUtilities.h"
 
-//#define LOCAL_SERVER 0
-
-//#import "OKCloud.h"
-//#import <objc/runtime.h>
-
-NSString *const OK_FBSessionStateChangedNotification = @"OK_FBSessionStateChangedNotification";
 
 
 @implementation OKAppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-    // Always enter your app key in didFinishLaunchingWithOptions
-#ifdef LOCAL_SERVER
+    /*
     [OKManager setAppKey:@"VwfMRAl5Gc4tirjw"];
-    [OKManager setEndpoint:@"http://10.0.1.21:3000"];
-#else
-    [OKManager setAppKey:@"VwfMRAl5Gc4tirjw"];
+    // [OKManager setSecretKey:@"<secret-goes-here>"];
     [OKManager setEndpoint:@"http://stage.openkit.io"];
-#endif
-
+    */
+    
+    // Development branch settings
+    [OKManager setAppKey:@"zRn4FrBcWi6ntUmWnEwm"];
+    [OKManager setSecretKey:@"rjqQmuDZaO6JtLuW25XPB2D6P0jplBfmuuANCKuu"];
+    [OKManager setEndpoint:@"http://development.openkit.io"];
 
     // Set root view controller.
     self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
@@ -38,6 +34,9 @@ NSString *const OK_FBSessionStateChangedNotification = @"OK_FBSessionStateChange
     UINavigationController *navi = [[UINavigationController alloc] initWithRootViewController:self.viewController];
     self.window.rootViewController = navi;
     [self.window makeKeyAndVisible];
+    
+    [OKGameCenterUtilities authorizeUserWithGameCenterAndallowUI:YES withPresentingViewController:self.viewController];
+    
 
     return YES;
 }

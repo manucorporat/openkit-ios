@@ -12,11 +12,24 @@
 
 
 void OKBridgeSetAppKey(const char *appKey);
+void OKBridgeSetSecretKey(const char *secretKey);
 void OKBridgeSetEndpoint(const char *endpoint);
+
 void OKBridgeShowLeaderboards();
+void OKBridgeShowLeaderboardsLandscapeOnly();
+
 void OKBridgeShowLoginUI();
 void OKBridgeSubmitScore(int64_t scoreValue, int leaderboardID, int metadata, const char *displayString, const char *gameObjectName);
 int OKBridgeGetCurrentUserOKID();
+
+void OKBridgeAuthenticateLocalPlayerWithGameCenter();
+bool OKBridgeIsPlayerAuthenticatedWithGameCenter();
+void OKBridgeAuthenticateLocalPlayerWithGameCenterAndShowUIIfNecessary();
+
 const char* OKBridgeGetCurrentUserNick();
 long long OKBridgeGetCurrentUserFBID();
 long long OKBridgeGetCurrentUserTwitterID();
+void OKBridgeLogoutCurrentUserFromOpenKit();
+
+void OKBridgeGetFacebookFriends(const char *gameObjectName);
+

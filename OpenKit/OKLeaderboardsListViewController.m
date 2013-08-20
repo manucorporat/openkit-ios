@@ -14,6 +14,8 @@
 #import "OKProfileViewController.h"
 #import "OKLoginView.h"
 #import "OKMacros.h"
+#import "OKSocialLeaderboardViewController.h"
+#import "OKColors.h"
 
 
 @interface OKLeaderboardsListViewController ()
@@ -34,11 +36,17 @@
     if (self) {
         UIBarButtonItem *closeButton = [[UIBarButtonItem alloc] initWithImage:[UIImage imageNamed:@"close.png"] style:UIBarButtonItemStyleBordered target:self action:@selector(back)];
         
-        UIBarButtonItem *profileButton = [[UIBarButtonItem alloc] initWithImage:[UIImage imageNamed:@"profile.png"] style:UIBarButtonItemStyleBordered target:self action:@selector(showProfileView)];
-      
-        UIBarButtonItem *backButton = [[UIBarButtonItem alloc] initWithTitle:@"Back" style:UIBarButtonItemStyleBordered target:nil action:nil];
+        [closeButton setTintColor:[UIColor blackColor]];
+
         
-        [[self navigationItem] setLeftBarButtonItem:closeButton];
+        UIBarButtonItem *profileButton = [[UIBarButtonItem alloc] initWithImage:[UIImage imageNamed:@"gear.png"] style:UIBarButtonItemStyleBordered target:self action:@selector(showProfileView)];
+      
+        UIBarButtonItem *backButton = [[UIBarButtonItem alloc] initWithTitle:@"Back" style:UIBarButtonItemStyleBordered target:self action:@selector(back)];
+        
+        [backButton setTitleTextAttributes:[OKColors titleTextAttributesForNavBarButton] forState:UIControlStateNormal];
+        
+        
+        [[self navigationItem] setLeftBarButtonItem:backButton];
         [[self navigationItem] setRightBarButtonItem:profileButton];
         [[self navigationItem] setBackBarButtonItem:backButton];
 
@@ -54,12 +62,6 @@
     [[self navigationItem] setTitle:@"Leaderboards"];
   
     [self getListOfLeaderboards];
-    
-    if(![OKUser currentUser])
-    {
-        OKLoginView *loginView = [[OKLoginView alloc] init];
-        [loginView show];
-    }
 }
 
 - (IBAction)back
@@ -108,6 +110,8 @@
     if(cell == nil)
         cell = [[OKLeaderboardListCell alloc] init];
 
+    [cell setBackgroundColor:[UIColor whiteColor]];
+  
     [cell setLeaderboard:[OKLeaderBoardsList objectAtIndex:row]];
     return cell;
 }
@@ -115,19 +119,21 @@
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
     OKLeaderboard *selectedLeaderboard = [OKLeaderBoardsList objectAtIndex:[indexPath row]];
-    OKLeaderboardViewController *vc = [[OKLeaderboardViewController alloc] initWithLeaderboard:selectedLeaderboard];
+    //OKLeaderboardViewController *vc = [[OKLeaderboardViewController alloc] initWithLeaderboard:selectedLeaderboard];
+    
+     OKSocialLeaderboardViewController *vc = [[OKSocialLeaderboardViewController alloc] initWithLeaderboard:selectedLeaderboard];
     [[self navigationController] pushViewController:vc animated:YES];
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
 {
     return [NSString stringWithFormat:@"%d Players",playerCount];
+    //return [NSString stringWithFormat:@"%d Leaderboards",[OKLeaderBoardsList count]];
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
   
   return @"Powered by OpenKit";
-  
 }
 
 //RootViewController.m

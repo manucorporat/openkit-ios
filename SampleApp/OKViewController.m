@@ -5,14 +5,19 @@
 //  Created by Suneet Shah on 12/26/12.
 //  Copyright (c) 2013 OpenKit. All rights reserved.
 //
+#import "OKScoreCache.h"
 
 #import "OKViewController.h"
 #import "ScoreSubmitterVC.h"
 #import "CloudDataTestVC.h"
+#import "OKFacebookUtilities.h"
+#import "OKFacebookUtilities.h"
 
 
 
 @implementation OKViewController
+
+@synthesize profileImageView;
 
 
 - (id)init
@@ -29,7 +34,7 @@
         [self.loginButton setHidden:YES];
         [self.logoutButton setHidden:NO];
         
-        [self.profileImageView setUser:[OKUser currentUser]];
+        [profileImageView setUser:[OKUser currentUser]];
         [self.userNickLabel setHidden:NO];
         [self.userNickLabel setText:[NSString stringWithFormat:@"%@", [[OKUser currentUser] userNick] ]];
     } else {
@@ -39,6 +44,23 @@
         [self.userNickLabel setHidden:YES];
         
     }
+}
+
+-(IBAction)launchGameCenter:(id)sender
+{
+    
+    GKGameCenterViewController *gameCenterController = [[GKGameCenterViewController alloc] init];
+    if (gameCenterController != nil)
+    {
+        gameCenterController.gameCenterDelegate = self;
+        [self presentViewController: gameCenterController animated: YES completion:nil];
+    }
+
+}
+
+- (void)gameCenterViewControllerDidFinish:(GKGameCenterViewController *)gameCenterViewController
+{
+    [self dismissViewControllerAnimated:YES completion:nil];
 }
 
 
@@ -66,9 +88,13 @@
 }
 
 
+
 -(IBAction)viewLeaderboards:(id)sender
 {
     OKLeaderboardsViewController *leaderBoards = [[OKLeaderboardsViewController alloc] init];
+    
+    // Set the showLandscapeOnly property on OKLeaderboardsViewController to force landscape orientation
+    //[leaderBoards setShowLandscapeOnly:YES];
     [self presentModalViewController:leaderBoards animated:YES];
 }
 
@@ -81,8 +107,14 @@
 
 - (IBAction)showCloudDataTest:(id)sender
 {
+    /*
     CloudDataTestVC *vc = [[CloudDataTestVC alloc] initWithNibName:@"CloudDataTestVC" bundle:nil];
     [[self navigationController] pushViewController:vc animated:YES];
+     */
+
+    NSLog(@"Cached scores: %@",[[OKScoreCache sharedCache] getCachedScores]);
+
+
 }
 
 

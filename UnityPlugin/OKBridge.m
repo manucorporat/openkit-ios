@@ -9,10 +9,16 @@
 //
 
 #import "OKBridge.h"
+#import "OKManager.h"
 #import "OKUnityHelper.h"
 #import "OpenKit.h"
+#import "OKGameCenterUtilities.h"
+#import "OKFacebookUtilities.h"
+#import "OKMacros.h"
 
 #import <UIKit/UIKit.h>
+
+extern void UnitySendMessage(const char *, const char *, const char *);
 
 /*
 #if TARGET_OS_IPHONE
@@ -21,26 +27,33 @@
 #endif
 */
 
-@interface BridgeViewController : UIViewController
+
+
+
+@interface BaseBridgeViewController : UIViewController
 {
     BOOL _didDisplay;
 }
 
 @property (nonatomic, retain) UIWindow *window;
-@property (nonatomic, retain) OKLeaderboardsViewController *leaderboardsVC;
 @end
 
-@implementation BridgeViewController
+
+@implementation BaseBridgeViewController
 
 @synthesize window = _window;
-@synthesize leaderboardsVC = _leaderboardsVC;
 
 - (id)init
 {
-    if ((self = [super init])) {
+    if(self = [super init]) {
         _didDisplay = NO;
     }
     return self;
+}
+
+- (void)customLaunch
+{
+    // Override me.
 }
 
 - (void)viewDidAppear:(BOOL)animated
@@ -48,8 +61,7 @@
     [super viewDidAppear:animated];
     if (!_didDisplay) {
         _didDisplay = YES;
-        self.leaderboardsVC = [[[OKLeaderboardsViewController alloc] init] autorelease];
-        [self presentModalViewController:self.leaderboardsVC animated:YES];
+        [self customLaunch];
     } else {
         [self.window setRootViewController:nil];
         [self release];
@@ -58,9 +70,93 @@
 
 - (void)dealloc
 {
-    NSLog(@"OpenKit: Deallocing BridgeViewController");
-    [_leaderboardsVC release];
     [_window release];
+    [super dealloc];
+}
+
+
+@end
+
+@interface OKDashBridgeViewController : BaseBridgeViewController <OKManagerDelegate>
+@property (nonatomic, retain) OKLeaderboardsViewController *leaderboardsVC;
+@property (nonatomic) BOOL shouldShowLandscapeOnly;
+@end
+
+
+@implementation OKDashBridgeViewController
+@synthesize leaderboardsVC = _leaderboardsVC;
+@synthesize shouldShowLandscapeOnly = _shouldShowLandscapeOnly;
+
+- (id)init
+{
+    if ((self = [super init])) {
+        [[OKManager sharedManager] setDelegate:self];
+    }
+    return self;
+}
+
+- (void)customLaunch
+{
+    self.leaderboardsVC = [[[OKLeaderboardsViewController alloc] init] autorelease];
+    [self.leaderboardsVC setShowLandscapeOnly:_shouldShowLandscapeOnly];
+    [self presentModalViewController:self.leaderboardsVC animated:YES];
+}
+
+- (void)openkitManagerWillShowDashboard:(OKManager *)manager
+{
+    UnitySendMessage("OpenKitPrefab", "NativeViewWillAppear", "");
+}
+
+- (void)openkitManagerDidShowDashboard:(OKManager *)manager
+{
+    UnitySendMessage("OpenKitPrefab", "NativeViewDidAppear", "");
+}
+
+- (void)openkitManagerWillHideDashboard:(OKManager *)manager
+{
+    UnitySendMessage("OpenKitPrefab", "NativeViewWillDisappear", "");
+}
+
+- (void)openkitManagerDidHideDashboard:(OKManager *)manager
+{
+    UnitySendMessage("OpenKitPrefab", "NativeViewDidDisappear", "");
+}
+
+- (void)dealloc
+{
+    OKBridgeLog(@"Deallocing OKDashboardViewController");
+    [[OKManager sharedManager] setDelegate:nil];
+    [_leaderboardsVC release];
+    [super dealloc];
+}
+
+@end
+
+
+@interface OKGameCenterBridgeViewController : BaseBridgeViewController
+@property (nonatomic, retain) UIViewController* gcViewControllerToLaunch;
+@end
+
+@implementation OKGameCenterBridgeViewController
+#import "OKGameCenterUtilities.h"
+
+@synthesize gcViewControllerToLaunch = _gcViewControllerToLaunch;
+
+
+- (void)customLaunch
+{
+    if(_gcViewControllerToLaunch)
+        [self presentModalViewController:_gcViewControllerToLaunch animated:YES];
+    else
+        OKBridgeLog(@"OKGameCenterBridgeViewController VC to launch was null");
+}
+
+- (void)dealloc
+{
+    
+    OKBridgeLog(@"Deallocing OKGameCenterBridgeViewController");
+    [_gcViewControllerToLaunch release];
+    // Release gc stuff if there is any.
     [super dealloc];
 }
 
@@ -72,24 +168,106 @@ void OKBridgeSetAppKey(const char *appKey)
     [OKManager setAppKey:[NSString stringWithUTF8String:appKey]];
 }
 
+void OKBridgeSetSecretKey(const char *secretKey)
+{
+    [OKManager setSecretKey:[NSString stringWithUTF8String:secretKey]];
+}
+
 void OKBridgeSetEndpoint(const char *endpoint)
 {
     [OKManager setEndpoint:[NSString stringWithUTF8String:endpoint]];
 }
 
-void OKBridgeShowLeaderboards()
+void OKBridgeShowLeaderboardsBase(BOOL showLandscapeOnly)
 {
     UIWindow *win = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
     win.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
     win.backgroundColor = [UIColor clearColor];
 
-    BridgeViewController *vc = [[BridgeViewController alloc] init];
+    OKDashBridgeViewController *vc = [[OKDashBridgeViewController alloc] init];
+    // Set shouldShowLandscapeOnly
+    [vc setShouldShowLandscapeOnly:showLandscapeOnly];
+    
     vc.window = win;
     [win release];
     // Bridge VC is now responsible for releasing win.  It holds the only reference
     // to it.
     [vc.window setRootViewController:vc];
     [vc.window makeKeyAndVisible];
+}
+
+
+void OKBridgeShowLeaderboards()
+{
+    OKBridgeShowLeaderboardsBase(NO);
+}
+
+void OKBridgeShowLeaderboardsLandscapeOnly()
+{
+    OKBridgeShowLeaderboardsBase(YES);
+}
+
+void OKBridgeLogoutCurrentUserFromOpenKit()
+{
+    OKBridgeLog(@"logout of OpenKit");
+    [OKUser logoutCurrentUserFromOpenKit];
+}
+
+void OKBridgeAuthenticateLocalPlayerWithGameCenter()
+{
+    OKBridgeLog(@"authenticating local player with GC");
+    [OKGameCenterUtilities authenticateLocalPlayer];
+}
+
+void OKBridgeAuthenticateLocalPlayerWithGameCenterAndShowUIIfNecessary()
+{
+    OKBridgeLog(@"authenticating local player with GC and showing UI if necessary");
+    
+    //If we need to show UI from GameCenter, then create the OKGameCenterBridgeViewController and display it
+    [OKGameCenterUtilities authorizeUserWithGameCenterWithBlockToHandleShowingGameCenterUI:^(UIViewController *viewControllerFromGC) {
+        // Need to show gamecenter UI
+        UIWindow *win = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+        win.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
+        win.backgroundColor = [UIColor clearColor];
+        
+        OKGameCenterBridgeViewController *vc = [[OKGameCenterBridgeViewController alloc] init];
+        
+        [vc setGcViewControllerToLaunch:viewControllerFromGC];
+        
+        vc.window = win;
+        [win release];
+        // Bridge VC is now responsible for releasing win.  It holds the only reference
+        // to it.
+        [vc.window setRootViewController:vc];
+        [vc.window makeKeyAndVisible];
+    }];
+ 
+}
+
+bool OKBridgeIsPlayerAuthenticatedWithGameCenter()
+{
+    return [OKGameCenterUtilities isPlayerAuthenticatedWithGameCenter];
+}
+
+void OKBridgeGetFacebookFriends(const char *gameObjectName)
+{
+    OKBridgeLog(@"Get fb friends list");
+    __block NSString *objName = [[NSString alloc] initWithUTF8String:gameObjectName];
+    
+    [OKFacebookUtilities getListOfFriendsForCurrentUserWithCompletionHandler:^(NSArray *friends, NSError *error) {
+        
+        if(friends && !error){
+            NSString *serializedFriends = [OKFacebookUtilities serializeListOfFacebookFriends:friends];
+            
+            UnitySendMessage([objName UTF8String], "asyncCallSucceeded",[serializedFriends UTF8String]);
+        } else{
+            if(error) {
+                UnitySendMessage([objName UTF8String], "asyncCallFailed", [[error localizedDescription] UTF8String]);
+            } else {
+                UnitySendMessage([objName UTF8String], "asyncCallFailed", "Unknown error from native IOS when trying to get Facebook friends");
+            }
+        }
+    }];
 }
 
 void OKBridgeShowLoginUI()
@@ -99,34 +277,65 @@ void OKBridgeShowLoginUI()
     [loginView release];
 }
 
+// Base method for submitting a score
+void OKBridgeSubmitScoreBase(OKScore *score, const char *gameObjectName)
+{
+    __block NSString *objName = [[NSString alloc] initWithUTF8String:gameObjectName];
+    
+    OKBridgeLog(@"Submit score base, game object name is: %s", [objName UTF8String]);
+    
+    [score submitScoreToOpenKitAndGameCenterWithCompletionHandler:^(NSError *error) {
+        
+        if(!error) {
+            UnitySendMessage([objName UTF8String], "scoreSubmissionSucceeded", "");
+        } else {
+            UnitySendMessage([objName UTF8String], "scoreSubmissionFailed", [[error localizedDescription] UTF8String]);
+        }
+        [objName release];
+    }];
+}
+
+
 void OKBridgeSubmitScore(int64_t scoreValue, int leaderboardID, int metadata, const char *displayString, const char *gameObjectName )
 {
     OKScore *score = [[OKScore alloc] init];
     score.scoreValue = scoreValue;
     score.OKLeaderboardID = leaderboardID;
-    OKUser *u = [OKUser currentUser];
+    //score.displayString = [[NSString alloc] initWithCString:displayString encoding:NSUTF8StringEncoding];
+    //score.displayString = [NSString stringWithFormat:@"%s", displayString];
     
-    score.displayString = [[NSString alloc] initWithCString:displayString encoding:NSUTF8StringEncoding];
+    if(displayString != NULL) {
+        score.displayString = [[NSString alloc] initWithUTF8String:displayString];
+    }
     
     score.metadata = metadata;
 
-
-    __block NSString *objName = [[NSString alloc] initWithCString:gameObjectName encoding:NSUTF8StringEncoding];
-
-    if (!u) {
-        UnitySendMessage([objName UTF8String], "scoreSubmissionFailed", "");
-    }
-
-    [score submitScoreWithCompletionHandler:^(NSError *error) {
-        if(!error) {
-            UnitySendMessage([objName UTF8String], "scoreSubmissionSucceeded", "");
-        } else {
-            UnitySendMessage([objName UTF8String], "scoreSubmissionFailed", [error.description UTF8String]);
-        }
-        [objName release];
-    }];
-
+    OKBridgeLog(@"Submitting score without GC");
+    
+    OKBridgeSubmitScoreBase(score, gameObjectName);
 }
+
+
+void OKBridgeSubmitScoreWithGameCenter(int64_t scoreValue, int leaderboardID, int metadata, const char *displayString, const char *gameObjectName, const char *gamecenterLeaderboardID)
+{
+    OKScore *score = [[OKScore alloc] init];
+    score.scoreValue = scoreValue;
+    score.OKLeaderboardID = leaderboardID;
+    //score.displayString = [[NSString alloc] initWithCString:displayString encoding:NSUTF8StringEncoding];
+    if(displayString != NULL) {
+        score.displayString = [[NSString alloc] initWithUTF8String:displayString];
+    }
+    score.metadata = metadata;
+    
+    if(gamecenterLeaderboardID != NULL) {
+        score.gamecenterLeaderboardID = [[NSString alloc] initWithUTF8String:gamecenterLeaderboardID];
+    }
+    
+    OKBridgeLog(@"Gamecenter leaderboard ID is: %@", score.gamecenterLeaderboardID);
+    OKBridgeLog(@"Submitting score with gamecenter");
+    OKBridgeSubmitScoreBase(score, gameObjectName);
+}
+
 
 int OKBridgeGetCurrentUserOKID()
 {
@@ -151,6 +360,3 @@ long long OKBridgeGetCurrentUserTwitterID()
     OKUser *u = [OKUser currentUser];
     return (u ? [u.twitterUserID longLongValue] : 0);
 }
-
-
-

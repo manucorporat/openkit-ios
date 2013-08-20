@@ -14,6 +14,9 @@
 #import "OKTwitterUtilities.h"
 #import "SimpleKeychain.h"
 #import "OKDefines.h"
+#import "OKUserProfileImageView.h"
+#import "OKLeaderboardsViewController.h"
+#import "OKScoreCache.h"
 
 #define DEFAULT_ENDPOINT    @"stage.openkit.io"
 
@@ -22,9 +25,6 @@
 {
     OKUser *_currentUser;
 }
-
-@property (nonatomic, strong) NSString *appKey;
-@property (nonatomic, strong) NSString *endpoint;
 
 @end
 
@@ -48,11 +48,27 @@
         [self getSavedUserFromKeychain];
         _endpoint = DEFAULT_ENDPOINT;
 
+        // These two lines below are required for the linker to work properly such that these classes are available in XIB files
         // This tripped me up for way to long.
         [FBProfilePictureView class];
+        [OKUserProfileImageView class];
+        
         [OKFacebookUtilities OpenCachedFBSessionWithoutLoginUI];
+
+        NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+        [nc addObserver:self selector:@selector(willShowDashboard:) name:OKLeaderboardsViewWillAppear object:nil];
+        [nc addObserver:self selector:@selector(didShowDashboard:)  name:OKLeaderboardsViewDidAppear object:nil];
+        [nc addObserver:self selector:@selector(willHideDashboard:) name:OKLeaderboardsViewWillDisappear object:nil];
+        [nc addObserver:self selector:@selector(didHideDashboard:)  name:OKLeaderboardsViewDidDisappear object:nil];
+        
     }
     return self;
+}
+
+- (void)dealloc
+{
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    // Do not call super here.  Using arc.
 }
 
 - (OKUser*)currentUser
@@ -80,6 +96,16 @@
     return [[OKManager sharedManager] endpoint];
 }
 
++ (void)setSecretKey:(NSString *)secretKey
+{
+    [[OKManager sharedManager] setSecretKey:secretKey];
+}
+
++ (NSString *)secretKey
+{
+    return [[OKManager sharedManager] secretKey];
+}
+
 - (void)logoutCurrentUser
 {
     NSLog(@"Logged out of openkit");
@@ -87,6 +113,8 @@
     [self removeCachedUserFromKeychain];
     //Log out and clear Facebook
     [FBSession.activeSession closeAndClearTokenInformation];
+    
+    [[OKScoreCache sharedCache] clearCache];
 }
 
 - (void)saveCurrentUser:(OKUser *)aCurrentUser
@@ -94,6 +122,7 @@
     self->_currentUser = aCurrentUser;
     [self removeCachedUserFromKeychain];
     [self saveCurrentUserToKeychain];
+    [[OKScoreCache sharedCache] submitAllCachedScores];
 }
 
 - (void)saveCurrentUserToKeychain
@@ -130,6 +159,7 @@
 + (void)handleDidBecomeActive
 {
     [OKFacebookUtilities handleDidBecomeActive];
+    [[OKScoreCache sharedCache] submitAllCachedScores];
 }
 
 + (void)handleWillTerminate
@@ -137,5 +167,33 @@
     [OKFacebookUtilities handleWillTerminate];
 }
 
+#pragma mark - Dashboard Display State Callbacks
+- (void)willShowDashboard:(NSNotification *)note
+{
+    if(_delegate && [_delegate respondsToSelector:@selector(openkitManagerWillShowDashboard:)]) {
+        [_delegate openkitManagerWillShowDashboard:self];
+    }
+}
+
+- (void)didShowDashboard:(NSNotification *)note
+{
+    if(_delegate && [_delegate respondsToSelector:@selector(openkitManagerDidShowDashboard:)]) {
+        [_delegate openkitManagerDidShowDashboard:self];
+    }
+}
+
+- (void)willHideDashboard:(NSNotification *)note
+{
+    if(_delegate && [_delegate respondsToSelector:@selector(openkitManagerWillHideDashboard:)]) {
+        [_delegate openkitManagerWillHideDashboard:self];
+    }
+}
+
+- (void)didHideDashboard:(NSNotification *)note
+{
+    if(_delegate && [_delegate respondsToSelector:@selector(openkitManagerDidHideDashboard:)]) {
+        [_delegate openkitManagerDidHideDashboard:self];
+    }
+}
 
 @end
